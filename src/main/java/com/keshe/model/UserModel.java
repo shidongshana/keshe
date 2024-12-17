@@ -11,8 +11,11 @@ public class UserModel
     private int id;
     private String username;
     private String password;
-
-    public int getId() {
+    private int role;
+    public int getRole() {
+        return role;
+    }
+        public int getId() {
         return id;
     }
 
@@ -35,7 +38,9 @@ public class UserModel
     public void setPassword(String password) {
         this.password = password;
     }
-
+    public String getAuthorities() {
+        return String.valueOf(role);
+    }
     @Override
     public String toString() {
         return "User{" +

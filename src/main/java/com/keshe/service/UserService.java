@@ -4,12 +4,15 @@ import com.keshe.mapper.UserMapper;
 import com.keshe.model.UserModel;
 import jakarta.annotation.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class UserService implements UserDetailsService {
@@ -25,7 +28,8 @@ public class UserService implements UserDetailsService {
         if (user == null) {
             throw new UsernameNotFoundException("登录失败，用户名或密码错误！");
         }
-        return User.withUsername(user.getUsername()).password(passwordEncoder.encode(user.getPassword())).build();
+
+        return User.withUsername(user.getUsername()).password(passwordEncoder.encode(user.getPassword())).authorities(user.getAuthorities()).build();
     }
 
 
