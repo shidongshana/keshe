@@ -31,6 +31,19 @@ public class UserService implements UserDetailsService {
 
         return User.withUsername(user.getUsername()).password(passwordEncoder.encode(user.getPassword())).authorities(user.getAuthorities()).build();
     }
+    public UserModel register(String username, String password, int role) {
+        UserModel user = new UserModel();
+        user.setUsername(username);
+        user.setPassword(passwordEncoder.encode(password));
+        user.setRole(role);
+        try {
+            userMapper.insertUser(user);
+        } catch (Exception e) {
+            throw new RuntimeException("注册失败，用户名已存在！");
+        }
+        return user;
+
+    }
 
 
 }

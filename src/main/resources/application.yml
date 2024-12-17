@@ -1,12 +1,9 @@
-
 spring:
-
   autoconfigure:
     exclude: org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
   web:
     resources:
       static-locations: classpath:/web
-
   datasource:
     url: jdbc:mysql://localhost:3306/usermodel?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=UTC
     username: root
@@ -15,5 +12,20 @@ spring:
   mybatis:
     mapper-locations: classpath:mapper/*.xml
     type-aliases-package: com.example.demo.model
+
 server:
   port: 8081
+
+kaptcha:
+  border: no
+  textproducer:
+    font:
+      color: black
+      size: 40
+    char:
+      string: abcde2345678gfynmnpwx
+      length: 5
+
+  image:
+    width: 200
+    height: 50

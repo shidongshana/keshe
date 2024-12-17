@@ -12,6 +12,11 @@ public class UserModel
     private String username;
     private String password;
     private int role;
+
+    public void setRole(int role) {
+        this.role = role;
+    }
+
     public int getRole() {
         return role;
     }

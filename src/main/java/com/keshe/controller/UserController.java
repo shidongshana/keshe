@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -20,6 +21,12 @@ public class UserController {
     public RestBean<String> username() {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         return RestBean.success(user.getUsername());
+    }
+
+    @PostMapping("/register")
+    public RestBean<String> register(String username, String password,int role) {
+        userService.register(username, password,role);
+        return RestBean.success("注册成功");
     }
 
 }

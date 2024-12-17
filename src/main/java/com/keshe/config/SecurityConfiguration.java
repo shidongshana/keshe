@@ -33,7 +33,11 @@ public class SecurityConfiguration  extends AbstractHttpConfigurer<SecurityConfi
         return http
                 .csrf().disable()
                 .authorizeHttpRequests(conf -> {
+                    conf.requestMatchers("/api/user/register").permitAll();
+                    conf.requestMatchers("/api/captcha/generate").permitAll();
+                    conf.requestMatchers("/api/captcha/validate").permitAll();
                     conf.anyRequest().authenticated();
+
                 })
                 .formLogin(conf -> {
                     //一般分离之后，为了统一规范接口，使用 /api/模块/功能 的形式命名接口
