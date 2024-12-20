@@ -1,16 +1,20 @@
 package com.keshe.service;
 
 import com.keshe.mapper.UserMapper;
-import com.keshe.entity.User;
+import com.keshe.entity.SysUser;
 import jakarta.annotation.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService implements UserDetailsService {
@@ -22,37 +26,46 @@ public class UserService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userMapper.getUserByUsername(username);
+        SysUser user = userMapper.getUserByUsername(username);
         if (user == null) {
             throw new UsernameNotFoundException("登录失败，用户名或密码错误！");
         }
         
+        // 获取用户角色和权限
+        List<String> roles = userMapper.getUserRoles(user.getId());
+        List<String> permissions = userMapper.getUserPermissions(user.getId());
+        
+        // 合并角色和权限
+        List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+        roles.forEach(role -> authorities.add(new SimpleGrantedAuthority("ROLE_" + role)));
+        permissions.forEach(permission -> authorities.add(new SimpleGrantedAuthority(permission)));
+        
         // 更新最后登录时间
-        user.setLastLogin(new Date());
+        user.setLastLogin(LocalDateTime.now());
         userMapper.updateLoginTime(user);
 
         return org.springframework.security.core.userdetails.User
                 .withUsername(user.getUsername())
                 .password(user.getPassword())
-                .authorities(user.getAuthorities())
+                .authorities(authorities)
                 .build();
     }
 
-    public User getUserByUsername(String username) {
-        User user = userMapper.getUserByUsername(username);
+    public SysUser getUserByUsername(String username) {
+        SysUser user = userMapper.getUserByUsername(username);
         if (user == null) {
             throw new UsernameNotFoundException("用户不存在");
         }
         return user;
     }
 
-    public User register(String username, String password, String email, String city) {
-        User user = new User();
+    public SysUser register(String username, String password, String email, String city) {
+        SysUser user = new SysUser();
         user.setUsername(username);
         user.setPassword(passwordEncoder.encode(password));
         user.setEmail(email);
         user.setCity(city);
-        user.setCreated(new Date());
+        user.setCreated(LocalDateTime.now());
         user.setStatus(1);  // 默认激活状态
         user.setAvatar("https://api.multiavatar.com/" + username + ".png");  // 默认头像
         

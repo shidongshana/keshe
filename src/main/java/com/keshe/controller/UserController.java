@@ -1,7 +1,7 @@
 package com.keshe.controller;
 
 import com.keshe.entity.RestBean;
-import com.keshe.entity.User;
+import com.keshe.entity.SysUser;
 import com.keshe.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -20,9 +20,9 @@ public class UserController {
     }
 
     @GetMapping("/info")
-    public RestBean<User> getUserInfo() {
+    public RestBean<SysUser> getUserInfo() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userService.getUserByUsername(username);
+        SysUser user = userService.getUserByUsername(username);
         user.setPassword(null);  // 出于安全考虑，不返回密码
         return RestBean.success(user);
     }
