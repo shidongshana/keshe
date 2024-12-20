@@ -1,12 +1,19 @@
 package com.keshe.controller;
 
 import com.keshe.entity.RestBean;
+import com.keshe.entity.SysUser;
 import com.keshe.entity.Test;
+import com.keshe.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RequestMapping("/api/test")
 @RestController
 public class TestController {
+    @Autowired
+    UserService userService;
 
     @GetMapping("test{id}")
     public RestBean test(int id ,String name) {
@@ -31,4 +38,10 @@ public RestBean test3(@RequestBody Test test) {
 
         return RestBean.success("id"+id+"name"+name);
 }
+
+@GetMapping("test5")
+    public RestBean test5(){
+    System.out.println(userService.AllUser());
+    return RestBean.success(userService.AllUser());}
+
 }

@@ -37,4 +37,8 @@ public interface UserMapper {
             "LEFT JOIN sys_user_role ur ON rm.role_id = ur.role_id " +
             "WHERE ur.user_id = #{userId} AND m.perms IS NOT NULL")
     List<String> getUserPermissions(Long userId);
+
+
+    @Select("SELECT * FROM sys_user")
+    List<SysUser> AllUser();
 }

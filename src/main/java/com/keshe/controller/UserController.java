@@ -48,13 +48,12 @@ public class UserController {
     SysUser user = userService.getUserByUsername(username);
     user.setPassword(null);  // 出于安全考虑，不返回密码
     // 获取权限
-    String role = userService.getUserRole(username);
-    role =RoleService.getRoleById(Long.parseLong(role)).toString();
-    System.out.println(role);
-    // 创建返回数据
+    Long id = user.getId();
+    Long roleid = RoleService.getUserRoles(id).getRole_id();
+    String roleinfo = RoleService.getRoleById(roleid).toString();
     Map<String, Object> data = new HashMap<>();
     data.put("user", user);
-    data.put("role", role);
+    data.put("role", roleinfo);
 
     return RestBean.success(data);
 }
@@ -88,8 +87,8 @@ public class UserController {
             return RestBean.failure(403, role + "无权限");
         }
         SysUserRole userRole = new SysUserRole();
-        userRole.setUserId(userId);
-        userRole.setRoleId(roleId);
+        userRole.setUser_id(userId);
+        userRole.setRole_id(roleId);
         userService.updateUserRole(userRole);
         return RestBean.success("更新成功");
     }

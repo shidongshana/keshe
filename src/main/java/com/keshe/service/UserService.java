@@ -1,5 +1,6 @@
 package com.keshe.service;
 
+import com.keshe.entity.Test;
 import com.keshe.mapper.UserMapper;
 import com.keshe.entity.SysUser;
 import com.keshe.entity.SysUserRole;
@@ -61,7 +62,9 @@ public class UserService implements UserDetailsService {
 
         return roles.stream().collect(Collectors.joining(","));
     }
-
+    public List<SysUser> AllUser() {
+        return userMapper.AllUser();
+    }
     public SysUser getUserByUsername(String username) {
         SysUser user = userMapper.getUserByUsername(username);
         if (user == null) {
@@ -71,7 +74,7 @@ public class UserService implements UserDetailsService {
     }
 
     public void updateUserRole(SysUserRole userRole) {
-        if (userMapper.getUserById(userRole.getUserId()) == null) {
+        if (userMapper.getUserById(userRole.getRole_id()) == null) {
            userMapper.insertUserRole(userRole);
         }
         userMapper.updateUserrole(userRole);
