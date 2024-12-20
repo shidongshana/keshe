@@ -45,7 +45,7 @@ public class JwtUtils {
             else
                 //重新组装为UserDetails对象，包括用户名、授权信息等
                 //打印过期时间
-                System.out.println("过期时间：" + claims.get("exp").asDate());
+               /* System.out.println("过期时间：" + claims.get("exp").asDate());*/
             return User
                     .withUsername(claims.get("name").asString())
                     .password("")

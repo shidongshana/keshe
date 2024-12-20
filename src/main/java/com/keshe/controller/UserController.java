@@ -1,32 +1,40 @@
 package com.keshe.controller;
 
 import com.keshe.entity.RestBean;
+import com.keshe.entity.User;
 import com.keshe.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-@RestController   //为了方便，我们一律使用RestController，这样每个请求默认都返回JSON对象
-@RequestMapping("/api/user")   //用户相关的接口，路径可以设置为/api/user/xxxx
+@RestController
+@RequestMapping("/api/user")
 public class UserController {
-
-
     @Autowired
     private UserService userService;
+
     @GetMapping("/name")
     public RestBean<String> username() {
-        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        return RestBean.success(user.getUsername());
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return RestBean.success(username);
+    }
+
+    @GetMapping("/info")
+    public RestBean<User> getUserInfo() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userService.getUserByUsername(username);
+        user.setPassword(null);  // 出于安全考虑，不返回密码
+        return RestBean.success(user);
     }
 
     @PostMapping("/register")
-    public RestBean<String> register(String username, String password,int role) {
-        userService.register(username, password,role);
+    public RestBean<String> register(@RequestParam String username, 
+                                   @RequestParam String password,
+                                   @RequestParam String email,
+                                   @RequestParam String city) {
+        userService.register(username, password, email, city);
         return RestBean.success("注册成功");
     }
+
 
 }
