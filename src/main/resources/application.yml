@@ -11,7 +11,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
   mybatis:
     mapper-locations: classpath:mapper/*.xml
-    type-aliases-package: com.example.demo.model
+    type-aliases-package: com.keshe.entity
 
 server:
   port: 8081

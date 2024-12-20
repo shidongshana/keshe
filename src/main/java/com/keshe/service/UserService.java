@@ -2,6 +2,7 @@ package com.keshe.service;
 
 import com.keshe.mapper.UserMapper;
 import com.keshe.entity.SysUser;
+import com.keshe.entity.SysUserRole;
 import jakarta.annotation.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -51,6 +52,16 @@ public class UserService implements UserDetailsService {
                 .build();
     }
 
+    public String getUserRole(String username) {
+        SysUser user = userMapper.getUserByUsername(username);
+        if (user == null) {
+            throw new UsernameNotFoundException("用户不存在");
+        }
+        List<String> roles = userMapper.getUserRoles(user.getId());
+
+        return roles.stream().collect(Collectors.joining(","));
+    }
+
     public SysUser getUserByUsername(String username) {
         SysUser user = userMapper.getUserByUsername(username);
         if (user == null) {
@@ -59,6 +70,12 @@ public class UserService implements UserDetailsService {
         return user;
     }
 
+    public void updateUserRole(SysUserRole userRole) {
+        if (userMapper.getUserById(userRole.getUserId()) == null) {
+           userMapper.insertUserRole(userRole);
+        }
+        userMapper.updateUserrole(userRole);
+    }
     public SysUser register(String username, String password, String email, String city) {
         SysUser user = new SysUser();
         user.setUsername(username);

@@ -1,6 +1,7 @@
 package com.keshe.mapper;
 
 import com.keshe.entity.SysUser;
+import com.keshe.entity.SysUserRole;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -16,6 +17,12 @@ public interface UserMapper {
     @Insert("INSERT INTO sys_user(username, password, avatar, email, city, created, status) " +
             "VALUES(#{username}, #{password}, #{avatar}, #{email}, #{city}, #{created}, #{status})")
     void insertUser(SysUser user);
+
+    @Update("UPDATE sys_user_role SET role_id = #{roleId} WHERE user_id = #{userId}")
+    void  updateUserrole(SysUserRole userrole);
+
+    @Insert("INSERT INTO sys_user_role(user_id, role_id) VALUES(#{userId}, #{roleId})")
+    void insertUserRole(SysUserRole userRole);
     
     @Update("UPDATE sys_user SET last_login = #{lastLogin} WHERE id = #{id}")
     void updateLoginTime(SysUser user);
