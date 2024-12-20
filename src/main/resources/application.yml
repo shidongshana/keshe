@@ -29,3 +29,18 @@ kaptcha:
   image:
     width: 200
     height: 50
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+  group-configs:
+    - group: '默认'
+      paths-to-match: '/**'
+
+logging:
+  level:
+    org.springframework.security: DEBUG

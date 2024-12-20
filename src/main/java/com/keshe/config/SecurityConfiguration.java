@@ -27,17 +27,18 @@ import java.io.PrintWriter;
 
 @Configuration
 @EnableWebSecurity
-public class SecurityConfiguration  extends AbstractHttpConfigurer<SecurityConfiguration, HttpSecurity> {
+public class SecurityConfiguration extends AbstractHttpConfigurer<SecurityConfiguration, HttpSecurity> {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf().disable()
                 .authorizeHttpRequests(conf -> {
+                    // 允许swagger-ui相关路径访问
+                    conf.requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll();
                     conf.requestMatchers("/api/user/register").permitAll();
                     conf.requestMatchers("/api/captcha/generate").permitAll();
                     conf.requestMatchers("/api/captcha/validate").permitAll();
                     conf.anyRequest().authenticated();
-
                 })
                 .formLogin(conf -> {
                     //一般分离之后，为了统一规范接口，使用 /api/模块/功能 的形式命名接口
@@ -78,11 +79,11 @@ public class SecurityConfiguration  extends AbstractHttpConfigurer<SecurityConfi
                                Object exceptionOrAuthentication) throws IOException {
         response.setContentType("application/json;charset=utf-8");
         PrintWriter writer = response.getWriter();
-        if(exceptionOrAuthentication instanceof AccessDeniedException exception) {
+        if (exceptionOrAuthentication instanceof AccessDeniedException exception) {
             writer.write(RestBean.failure(403, exception.getMessage()).asJsonString());
-        } else if(exceptionOrAuthentication instanceof AuthenticationException exception) {
+        } else if (exceptionOrAuthentication instanceof AuthenticationException exception) {
             writer.write(RestBean.failure(401, exception.getMessage()).asJsonString());
-        } else if(exceptionOrAuthentication instanceof Authentication authentication){
+        } else if (exceptionOrAuthentication instanceof Authentication authentication) {
             //不过这里需要注意，在登录成功的时候需要返回我们生成的JWT令牌，这样客户端下次访问就可以携带这个令牌了，令牌过期之后就需要重新登录才可以
             writer.write(RestBean.success(JwtUtils.createJwt((User) authentication.getPrincipal())).asJsonString());
         }
