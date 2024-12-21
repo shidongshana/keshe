@@ -1,0 +1,2 @@
+INSERT INTO `brand`(`id`, `name`, `logo`, `description`, `status`, `created`, `updated`) VALUES (1, 'Apple', 'apple_logo.png', 'American multinational technology company', 1, '2024-12-21 11:36:08', NULL);
+INSERT INTO `brand`(`id`, `name`, `logo`, `description`, `status`, `created`, `updated`) VALUES (2, 'Samsung', 'samsung_logo.png', 'South Korean multinational electronics company', 1, '2024-12-21 11:36:08', NULL);
