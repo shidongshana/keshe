@@ -165,7 +165,7 @@ router.beforeEach(async (to, from, next) => {
 
   if (to.path === '/login' && credentials) {
     try {
-      const response = await axios.get('http://localhost:8081/api/user/info', {
+      const response = await axios.get('http://localhost:8081/api/user/login', {
         headers: {
           'Authorization': `Bearer ${JSON.parse(localStorage.getItem('credentials'))?.token}`
         }

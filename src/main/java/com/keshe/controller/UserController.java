@@ -92,4 +92,10 @@ public class UserController {
         userService.updateUserRole(userRole);
         return RestBean.success("更新成功");
     }
+
+    @GetMapping("/login")
+    public RestBean<String> login() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return RestBean.success(userService.loadUserByUsername(username).toString());
+    }
 }

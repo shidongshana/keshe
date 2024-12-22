@@ -1,20 +1,16 @@
 package com.keshe.entity;
 
 import lombok.Data;
+
 import java.time.LocalDateTime;
 
 @Data
-public class SysMenu {
+public class ProductAttribute {
     private Long id;
-    private Long parent_id;
     private String name;
-    private String path;
-    private String perms;
-    private String component;
+    private String description;
     private Integer type;
-    private String icon;
-    private Integer orderNum;
+    private Integer status;
     private LocalDateTime created;
     private LocalDateTime updated;
-    private Integer status;
-} 
+}

@@ -15,11 +15,11 @@ public interface MenuMapper {
     List<SysMenu> getAllMenus();
 
     @Insert("INSERT INTO sys_menu(parent_id, name, path, perms, component, type, icon, orderNum, created, updated, status) " +
-            "VALUES(#{parentId}, #{name}, #{path}, #{perms}, #{component}, #{type}, #{icon}, #{orderNum}, #{created}, #{updated}, #{status})")
+            "VALUES(#{parent_id}, #{name}, #{path}, #{perms}, #{component}, #{type}, #{icon}, #{orderNum}, #{created}, #{updated}, #{status})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertMenu(SysMenu menu);
 
-    @Update("UPDATE sys_menu SET parent_id=#{parentId}, name=#{name}, path=#{path}, perms=#{perms}, component=#{component}, type=#{type}, icon=#{icon}, orderNum=#{orderNum}, created=#{created}, updated=#{updated}, status=#{status} WHERE id=#{id}")
+    @Update("UPDATE sys_menu SET parent_id=#{parent_id}, name=#{name}, path=#{path}, perms=#{perms}, component=#{component}, type=#{type}, icon=#{icon}, orderNum=#{orderNum}, created=#{created}, updated=#{updated}, status=#{status} WHERE id=#{id}")
     void updateMenu(SysMenu menu);
 
     @Delete("DELETE FROM sys_menu WHERE id = #{id}")

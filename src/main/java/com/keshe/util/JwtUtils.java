@@ -24,7 +24,7 @@ public class JwtUtils {
         Algorithm algorithm = Algorithm.HMAC256(key);
         Calendar calendar = Calendar.getInstance();
         Date now = calendar.getTime();
-        calendar.add(Calendar.SECOND, 3600 * 7);
+        calendar.add(Calendar.SECOND, 3600 * 24*7);
         return JWT.create()
                 .withClaim("name", user.getUsername())  //配置JWT自定义信息
                 .withClaim("authorities", user.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList())
