@@ -59,4 +59,7 @@ public interface UserMapper {
 
     @Select("SELECT COUNT(*) FROM sys_user")
     int getTotalUsers();
+
+    @Select("SELECT status FROM sys_user WHERE username = #{username}")
+    Integer getUserStatus(String username);
 }

@@ -156,6 +156,9 @@ public class UserService implements UserDetailsService {
         return avatar;
     }
 
+    public int getUserStatus(String username) {
+        return userMapper.getUserStatus(username);
+    }
 
 
 }

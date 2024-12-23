@@ -153,4 +153,9 @@ public class UserController {
         userService.updateAvatar(username, avatar);
         return RestBean.success("更新成功");
     }
+
+    @GetMapping("/status")
+    public RestBean<Integer> getUserStatus(@RequestParam String username) {
+        return RestBean.success(userService.getUserStatus(username));
+    }
 }

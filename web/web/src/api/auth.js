@@ -565,3 +565,12 @@ export function addProductImage(product_id, image_url, is_main) {
     }
   })
 }
+
+// 添加检查用户状态的方法
+export function checkUserStatus(username) {
+  return request({
+    url: '/api/user/status',
+    method: 'get',
+    params: { username }
+  })
+}

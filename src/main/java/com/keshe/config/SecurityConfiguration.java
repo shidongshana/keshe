@@ -35,6 +35,7 @@ public class SecurityConfiguration extends AbstractHttpConfigurer<SecurityConfig
                 .authorizeHttpRequests(conf -> {
                     // 允许swagger-ui相关路径访问
                     conf.requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll();
+                    conf.requestMatchers("/api/user/status").permitAll();
                     conf.requestMatchers("/api/user/register").permitAll();
                     conf.requestMatchers("/api/captcha/generate").permitAll();
                     conf.requestMatchers("/api/captcha/validate").permitAll();

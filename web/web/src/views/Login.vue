@@ -114,7 +114,7 @@ import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { User, Lock, Key, Message, Location } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
-import { login, register, generateCaptcha, validateCaptcha } from '@/api/auth'
+import { login, register, generateCaptcha, validateCaptcha, checkUserStatus } from '@/api/auth'
 
 const router = useRouter()
 const activeTab = ref('login')
@@ -208,23 +208,35 @@ const handleLogin = async () => {
       }
 
       try {
-        const res = await login(loginForm.username, loginForm.password)
-        if (res.code === 200) {
-          console.log('登录成功，准备跳转...')
-          localStorage.setItem('credentials', JSON.stringify({
-            token: res.data
-          }))
-          ElMessage.success('登录成功')
-          console.log('即将跳转到：/home')
-          await router.push('/home')
-          console.log('跳转完成')
+        // 首先检查用户状态
+        const statusRes = await checkUserStatus(loginForm.username)
+        if (statusRes.code === 200) {
+          if (statusRes.data !== 1) {
+            ElMessage.error('账号已被禁用，请联系管理员')
+            return
+          }
+          
+          // 用户状态正常，继续登录流程
+          const res = await login(loginForm.username, loginForm.password)
+          if (res.code === 200) {
+            console.log('登录成功，准备跳转...')
+            localStorage.setItem('credentials', JSON.stringify({
+              token: res.data
+            }))
+            ElMessage.success('登录成功')
+            console.log('即将跳转到：/home')
+            await router.push('/home')
+            console.log('跳转完成')
+          } else {
+            ElMessage.error(res.message || '登录失败')
+            refreshCaptcha()
+          }
         } else {
-          ElMessage.error(res.message || '登录失败')
-          refreshCaptcha()
+          ElMessage.error('检查用户状态失败')
         }
       } catch (error) {
         console.error('登录错误:', error)
-        ElMessage.error('登录失败，请检查网络连接')
+        ElMessage.error('登录失败，请稍后重试')
         refreshCaptcha()
       }
     }
