@@ -48,15 +48,11 @@ logging:
 aliyun:
   oss:
     endpoint: oss-cn-beijing.aliyuncs.com
-    keyId:
-    keySecret:
+    keyId: LTAI5tMQsMKagJuEi6wLHszx
+    keySecret:  vPUokM9UozcKAk51IjzkPhLxVbbpLU
     bucketName: spring20031213
 
 
 
 
 
-
-string:
-  LTAI5tMQsMKagJuEi6wLHszx
-  vPUokM9UozcKAk51IjzkPhLxVbbpLU
