@@ -4,6 +4,7 @@ import com.keshe.entity.SysUser;
 import com.keshe.entity.SysUserRole;
 import org.apache.ibatis.annotations.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Mapper
@@ -41,4 +42,21 @@ public interface UserMapper {
 
     @Select("SELECT * FROM sys_user")
     List<SysUser> AllUser();
+
+    @Update("UPDATE sys_user SET username = #{username}, email = #{email}, " +
+            "city = #{city}, status = #{status}, updated = #{updated} " +
+            "WHERE id = #{id}")
+    int updateUser(SysUser user);
+
+    @Update("UPDATE sys_user SET status = #{status}, updated = #{updated} " +
+            "WHERE id = #{userId}")
+    int updateUserStatus(@Param("userId") Long userId, 
+                        @Param("status") Integer status, 
+                        @Param("updated") LocalDateTime updated);
+
+    @Select("SELECT * FROM sys_user LIMIT #{offset}, #{pageSize}")
+    List<SysUser> getUsersByPage(@Param("offset") int offset, @Param("pageSize") int pageSize);
+
+    @Select("SELECT COUNT(*) FROM sys_user")
+    int getTotalUsers();
 }

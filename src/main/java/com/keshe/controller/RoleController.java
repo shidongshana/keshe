@@ -1,16 +1,11 @@
 package com.keshe.controller;
 
-import com.keshe.entity.RestBean;
-import com.keshe.entity.SysRoleMenu;
-import com.keshe.entity.SysUser;
-import com.keshe.entity.SysUserRole;
+import com.keshe.entity.*;
 import com.keshe.service.RoleService;
 import com.keshe.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.List;
@@ -53,5 +48,35 @@ public class RoleController {
         data.put("menus", menus);
         return RestBean.success(data);
     }
+
+    @GetMapping("/all")
+    public RestBean<Map<String,Object>> findAll() {
+        Map<String,Object> data = new HashMap<>();
+        data.put("roles", roleService.findAll());
+        return RestBean.success(data);
+    }
+
+    @PostMapping("/add")
+    public RestBean<Map<String,Object>> addRole(SysRole Role) {
+        Map<String,Object> data = new HashMap<>();
+        data.put("role", roleService.insert(Role));
+        return RestBean.success(data);
+    }
+
+    @DeleteMapping("/{id}")
+    public RestBean<Map<String,Object>> deleteRole(@PathVariable Long id) {
+        Map<String,Object> data = new HashMap<>();
+        data.put("role", roleService.deleteById(id));
+        return RestBean.success(data);
+    }
+
+    @PutMapping("/update")
+    public RestBean<Map<String,Object>> updateRole(@RequestBody SysRole role) {
+        Map<String,Object> data = new HashMap<>();
+        data.put("role", roleService.update(role));
+        return RestBean.success(data);
+    }
+    
+
 
 }

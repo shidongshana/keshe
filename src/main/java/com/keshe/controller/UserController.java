@@ -98,4 +98,50 @@ public class UserController {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         return RestBean.success(userService.loadUserByUsername(username).toString());
     }
+
+    @PostMapping("/update")
+    public RestBean<String> updateUser(@RequestBody SysUser user) {
+        // 检查操作权限
+        String role = userService.getUserRole(SecurityContextHolder.getContext().getAuthentication().getName());
+        if (!role.contains("1")) {
+            return RestBean.failure(403, "无权限");
+        }
+        
+        try {
+            userService.updateUser(user);
+            return RestBean.success("更新成功");
+        } catch (Exception e) {
+            return RestBean.failure(500, "更新失败：" + e.getMessage());
+        }
+    }
+
+    @PostMapping("/updateStatus")
+    public RestBean<String> updateUserStatus(@RequestBody Map<String, Object> params) {
+        // 检查操作权限
+        String role = userService.getUserRole(SecurityContextHolder.getContext().getAuthentication().getName());
+        if (!role.contains("1")) {
+            return RestBean.failure(403, "无权限");
+        }
+        
+        try {
+            Long userId = Long.parseLong(params.get("userId").toString());
+            Integer status = Integer.parseInt(params.get("status").toString());
+            userService.updateUserStatus(userId, status);
+            return RestBean.success("更新成功");
+        } catch (Exception e) {
+            return RestBean.failure(500, "更新失败：" + e.getMessage());
+        }
+    }
+
+    @GetMapping("/page")
+    public RestBean<Map<String, Object>> getUsersByPage(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int pageSize) {
+        try {
+            Map<String, Object> result = userService.getUsersByPage(page, pageSize);
+            return RestBean.success(result);
+        } catch (Exception e) {
+            return RestBean.failure(500, "获取用户列表失败：" + e.getMessage());
+        }
+    }
 }

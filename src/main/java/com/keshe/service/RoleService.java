@@ -29,4 +29,21 @@ public class RoleService {
     public List<SysRoleMenu> getRoleMenus(Long roleId) {
         return roleMapper.getRoleMenus(roleId);
     }
+
+
+    public List<SysRole> findAll() {
+        return roleMapper.findAll();
+    }
+
+    public int insert(SysRole role) {
+        return roleMapper.insert(role);
+    }
+
+    public int deleteById(Long id) {
+        return roleMapper.deleteById(id);
+    }
+
+    public int update(SysRole role) {
+        return roleMapper.update(role);
+    }
 }

@@ -3,6 +3,7 @@ package com.keshe.mapper;
 import com.keshe.entity.SysMenu;
 import org.apache.ibatis.annotations.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Mapper
@@ -19,9 +20,23 @@ public interface MenuMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertMenu(SysMenu menu);
 
-    @Update("UPDATE sys_menu SET parent_id=#{parent_id}, name=#{name}, path=#{path}, perms=#{perms}, component=#{component}, type=#{type}, icon=#{icon}, orderNum=#{orderNum}, created=#{created}, updated=#{updated}, status=#{status} WHERE id=#{id}")
+    @Update("UPDATE sys_menu SET " +
+            "parent_id=#{parent_id}, " +
+            "name=#{name}, " +
+            "path=#{path}, " +
+            "perms=#{perms}, " +
+            "component=#{component}, " +
+            "type=#{type}, " +
+            "icon=#{icon}, " +
+            "orderNum=#{orderNum}, " +
+            "status=#{status}, " +
+            "updated=#{updated} " +
+            "WHERE id=#{id}")
     void updateMenu(SysMenu menu);
 
     @Delete("DELETE FROM sys_menu WHERE id = #{id}")
     void deleteMenu(Long id);
+
+    @Update("UPDATE sys_menu SET status = #{status}, updated = #{updated} WHERE id = #{id}")
+    void updateStatus(@Param("id") Long id, @Param("status") Integer status, @Param("updated") LocalDateTime updated);
 }

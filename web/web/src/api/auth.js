@@ -347,3 +347,142 @@ export const getTypeTotal = () => {
     }
   })
 }
+
+// 更新用户信息
+export const updateUser = (data) => {
+  return request({
+    url: '/api/user/update',
+    method: 'post',
+    data
+  })
+}
+
+// 更新用户状态
+export const updateUserStatus = (userId, status) => {
+  return request({
+    url: '/api/user/updateStatus',
+    method: 'post',
+    data: {
+      userId,
+      status
+    }
+  })
+}
+
+// 获取用户列表（分页）
+export const getUserList = (page = 1, pageSize = 10) => {
+  return request({
+    url: '/api/user/page',
+    method: 'get',
+    params: {
+      page,
+      pageSize
+    }
+  })
+}
+
+// 在文件末尾添加以下角色管理相关的接口
+
+// 获取所有角色
+export const getRoleList = () => {
+  return request({
+    url: '/api/role/all',
+    method: 'get',
+    headers: {
+      'Authorization': `Bearer ${JSON.parse(localStorage.getItem('credentials'))?.token}`
+    }
+  })
+}
+
+// 添加角色
+export const addRole = (roleData) => {
+  return request({
+    url: '/api/role/add',
+    method: 'post',
+    data: roleData,
+    headers: {
+      'Authorization': `Bearer ${JSON.parse(localStorage.getItem('credentials'))?.token}`
+    }
+  })
+}
+
+// 更新角色
+export const updateRole = (roleData) => {
+  return request({
+    url: '/api/role/update',
+    method: 'put',
+    data: roleData,
+    headers: {
+      'Authorization': `Bearer ${JSON.parse(localStorage.getItem('credentials'))?.token}`
+    }
+  })
+}
+
+// 删除角色
+export const deleteRole = (id) => {
+  return request({
+    url: `/api/role/${id}`,
+    method: 'delete',
+    headers: {
+      'Authorization': `Bearer ${JSON.parse(localStorage.getItem('credentials'))?.token}`
+    }
+  })
+}
+
+// 获取所有菜单（不限制parent_id）
+export const getAllMenus = () => {
+  return request({
+    url: '/api/menu/all',
+    method: 'get',
+    headers: {
+      'Authorization': `Bearer ${JSON.parse(localStorage.getItem('credentials'))?.token}`
+    }
+  })
+}
+
+// 添加菜单
+export const addMenu = (menuData) => {
+  return request({
+    url: '/api/menu/add',
+    method: 'post',
+    data: menuData,
+    headers: {
+      'Authorization': `Bearer ${JSON.parse(localStorage.getItem('credentials'))?.token}`
+    }
+  })
+}
+
+// 更新菜单
+export const updateMenu = (menuData) => {
+  return request({
+    url: '/api/menu/update',
+    method: 'put',
+    data: menuData,
+    headers: {
+      'Authorization': `Bearer ${JSON.parse(localStorage.getItem('credentials'))?.token}`
+    }
+  })
+}
+
+// 删除菜单
+export const deleteMenu = (id) => {
+  return request({
+    url: `/api/menu/${id}`,
+    method: 'delete',
+    headers: {
+      'Authorization': `Bearer ${JSON.parse(localStorage.getItem('credentials'))?.token}`
+    }
+  })
+}
+
+// 更新菜单状态
+export const updateMenuStatus = (id, status) => {
+  return request({
+    url: '/api/menu/status',
+    method: 'put',
+    data: { id, status },
+    headers: {
+      'Authorization': `Bearer ${JSON.parse(localStorage.getItem('credentials'))?.token}`
+    }
+  })
+}

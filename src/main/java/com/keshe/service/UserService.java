@@ -15,7 +15,9 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -95,5 +97,51 @@ public class UserService implements UserDetailsService {
             throw new RuntimeException("注册失败，用户名已存在！");
         }
         return user;
+    }
+
+    public void updateUser(SysUser user) {
+        // 设置更新时间
+        user.setUpdated(LocalDateTime.now());
+        
+        // 如果密码字段不为空，则需要加密
+        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
+        }
+        
+        int result = userMapper.updateUser(user);
+        if (result == 0) {
+            throw new RuntimeException("更新失败，用户不存在");
+        }
+    }
+
+    public void updateUserStatus(Long userId, Integer status) {
+        if (status != 0 && status != 1) {
+            throw new IllegalArgumentException("状态值无效");
+        }
+        
+        int result = userMapper.updateUserStatus(userId, status, LocalDateTime.now());
+        if (result == 0) {
+            throw new RuntimeException("更新失败，用户不存在");
+        }
+    }
+
+    public Map<String, Object> getUsersByPage(int page, int pageSize) {
+        // 计算偏移量
+        int offset = (page - 1) * pageSize;
+        
+        // 获取分页数据
+        List<SysUser> users = userMapper.getUsersByPage(offset, pageSize);
+        
+        // 获取总记录数
+        int total = userMapper.getTotalUsers();
+        
+        // 构建返回结果
+        Map<String, Object> result = new HashMap<>();
+        result.put("records", users);
+        result.put("total", total);
+        result.put("page", page);
+        result.put("pageSize", pageSize);
+        
+        return result;
     }
 }
