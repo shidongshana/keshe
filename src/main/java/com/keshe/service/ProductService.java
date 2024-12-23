@@ -48,6 +48,11 @@ public class ProductService {
         return productMapper.findImages(product_id);
     }
 
+    public void updateImage(ProductImage productImage) {
+        productMapper.updateImage(productImage);
+    }
+
+
     public PageResult<Product> findPage(int page, int limit) {
         int offset = (page - 1) * limit;
         System.out.println("Executing query with offset: " + offset + ", limit: " + limit);
@@ -62,5 +67,13 @@ public class ProductService {
         List<Product> products = productMapper.findByNamePage(name, offset, limit);
         long total = productMapper.countByName(name);
         return new PageResult<>(products, total);
+    }
+
+    public long findMaxId() {
+        return productMapper.findMaxId();
+    }
+
+    public void insertImage(ProductImage productImage) {
+        productMapper.insertImage(productImage);
     }
 }

@@ -20,6 +20,11 @@ public class BrandController {
         return RestBean.success(brandService.findPage(page, limit));
     }
 
+    @GetMapping
+    public RestBean findAll() {
+        return RestBean.success(brandService.findAll());
+    }
+
     @GetMapping("/detail")
     public RestBean detail(@RequestParam Long id) {
         return RestBean.success(brandService.findById(id));

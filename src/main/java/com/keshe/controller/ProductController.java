@@ -1,6 +1,7 @@
 package com.keshe.controller;
 
 import com.keshe.entity.Product;
+import com.keshe.entity.ProductImage;
 import com.keshe.entity.RestBean;
 import com.keshe.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,8 +38,23 @@ public class ProductController {
     }
 
     @PostMapping("/add")
-    public RestBean add(@RequestBody Product product) {
+    public RestBean add(@RequestParam Map<String, Object> map) {
+        Product product = new Product();
+        product.setName((String) map.get("name"));
+        product.setCategory_id(Long.parseLong((String) map.get("category_id")));
+        product.setType_id(Long.parseLong((String) map.get("type_id")));
+        product.setBrand_id(Long.parseLong((String) map.get("brand_id")));
+        product.setPrice(Double.parseDouble((String) map.get("price")));
+        product.setStock(Integer.parseInt((String) map.get("stock")));
+        product.setDescription((String) map.get("description"));
+        product.setStatus(Integer.parseInt((String) map.get("status")));
+        Long  maxId = productService.findMaxId()+1;
         productService.insert(product);
+        ProductImage productImage = new ProductImage();
+        productImage.setProduct_id(maxId);
+        productImage.setImage_url((String) map.get("image_url"));
+        productImage.setIs_main(1L);
+        productService.insertImage(productImage);
         return RestBean.success("添加成功");
     }
 
@@ -70,6 +86,27 @@ public RestBean update(@RequestBody Product product) {
     public RestBean images(@RequestParam Long product_id) {
         return RestBean.success(productService.findImages(product_id));
     }
+
+    @PostMapping("/updateImage")
+    public RestBean updateImage(@RequestParam Long id ,@RequestParam String image_url) {
+        ProductImage productImage = new ProductImage();
+        productImage.setId(id);
+        productImage.setImage_url(image_url);
+        productService.updateImage(productImage);
+        return RestBean.success("修改成功");
+    }
+
+    @PostMapping("/addImage")
+    public RestBean addImage(@RequestParam Long product_id, @RequestParam String image_url, @RequestParam Long is_main) {
+        ProductImage productImage = new ProductImage();
+        productImage.setProduct_id(product_id);
+        productImage.setImage_url(image_url);
+        productImage.setIs_main(is_main);
+        productService.insertImage(productImage);
+        return RestBean.success("添加成功");
+    }
+
+
 
 
 

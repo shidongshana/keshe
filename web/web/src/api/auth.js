@@ -38,14 +38,15 @@ export function login(username, password) {
   })
 }
 
-export function register(username, password, role) {
+export function register(username, password, email, city) {
   return request({
     url: '/api/user/register',
     method: 'post',
     params: {
       username,
-      password: String(password),
-      role: Number(role)
+      password,
+      email,
+      city
     }
   })
 }
@@ -481,6 +482,84 @@ export const updateMenuStatus = (id, status) => {
     url: '/api/menu/status',
     method: 'put',
     data: { id, status },
+    headers: {
+      'Authorization': `Bearer ${JSON.parse(localStorage.getItem('credentials'))?.token}`
+    }
+  })
+}
+
+// 修改上传头像到OSS的方法
+export function uploadOssFile(data) {
+  return request({
+    url: '/api/fileoss/uploadOssFile',
+    method: 'post',
+    data,
+    headers: {
+      'Content-Type': 'multipart/form-data',
+      'Authorization': `Bearer ${JSON.parse(localStorage.getItem('credentials'))?.token}`
+    }
+  }).then(response => {
+    console.log('OSS upload response:', response)
+    return response
+  })
+}
+
+// 修改更新用户头像的方法
+export function updateUserAvatar(avatar) {
+  return request({
+    url: '/api/user/updateAvatar',
+    method: 'post',
+    params: { avatar },
+    headers: {
+      'Authorization': `Bearer ${JSON.parse(localStorage.getItem('credentials'))?.token}`
+    }
+  })
+}
+
+// 获取所有分类
+export function getAllCategories() {
+  return request({
+    url: '/api/types',
+    method: 'get',
+    headers: {
+      'Authorization': `Bearer ${JSON.parse(localStorage.getItem('credentials'))?.token}`
+    }
+  })
+}
+
+// 获取所有品牌
+export function getAllBrands() {
+  return request({
+    url: '/api/brand',
+    method: 'get',
+    headers: {
+      'Authorization': `Bearer ${JSON.parse(localStorage.getItem('credentials'))?.token}`
+    }
+  })
+}
+
+// 添加商品
+export function addProduct(data) {
+  return request({
+    url: '/api/product/add',
+    method: 'post',
+    params: data,  // 使用params因为后端使用@RequestParam
+    headers: {
+      'Authorization': `Bearer ${JSON.parse(localStorage.getItem('credentials'))?.token}`
+    }
+  })
+}
+
+// 添加商品图片
+export function addProductImage(product_id, image_url, is_main) {
+  return request({
+    url: '/api/product/addImage',
+    method: 'post',
+    params: {
+      product_id,
+      image_url,
+      is_main
+    },
     headers: {
       'Authorization': `Bearer ${JSON.parse(localStorage.getItem('credentials'))?.token}`
     }

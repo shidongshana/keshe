@@ -106,8 +106,10 @@ public class UserController {
         if (!role.contains("1")) {
             return RestBean.failure(403, "无权限");
         }
+        System.out.println(user);
         
         try {
+            // 确保更新包含头像URL
             userService.updateUser(user);
             return RestBean.success("更新成功");
         } catch (Exception e) {
@@ -143,5 +145,12 @@ public class UserController {
         } catch (Exception e) {
             return RestBean.failure(500, "获取用户列表失败：" + e.getMessage());
         }
+    }
+
+    @PostMapping("/updateAvatar")
+    public RestBean<String> updateAvatar(@RequestParam String avatar) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        userService.updateAvatar(username, avatar);
+        return RestBean.success("更新成功");
     }
 }

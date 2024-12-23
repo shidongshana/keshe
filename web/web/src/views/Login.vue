@@ -52,6 +52,20 @@
                 </template>
               </el-input>
             </el-form-item>
+            <el-form-item prop="email">
+              <el-input v-model="registerForm.email" placeholder="邮箱">
+                <template #prefix>
+                  <el-icon><Message /></el-icon>
+                </template>
+              </el-input>
+            </el-form-item>
+            <el-form-item prop="city">
+              <el-input v-model="registerForm.city" placeholder="城市">
+                <template #prefix>
+                  <el-icon><Location /></el-icon>
+                </template>
+              </el-input>
+            </el-form-item>
             <el-form-item prop="password">
               <el-input v-model="registerForm.password" type="password" placeholder="密码">
                 <template #prefix>
@@ -65,12 +79,6 @@
                   <el-icon><Lock /></el-icon>
                 </template>
               </el-input>
-            </el-form-item>
-            <el-form-item prop="role">
-              <el-radio-group v-model="registerForm.role">
-                <el-radio :label="0">普通用户</el-radio>
-                <el-radio :label="1">管理员</el-radio>
-              </el-radio-group>
             </el-form-item>
             <el-form-item prop="captcha">
               <div class="captcha-container">
@@ -103,7 +111,7 @@
 
 <script setup>
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
-import { User, Lock, Key } from '@element-plus/icons-vue'
+import { User, Lock, Key, Message, Location } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { login, register, generateCaptcha, validateCaptcha } from '@/api/auth'
@@ -126,7 +134,8 @@ const registerForm = reactive({
   username: '',
   password: '',
   confirmPassword: '',
-  role: 0,
+  email: '',
+  city: '',
   captcha: ''
 })
 
@@ -237,7 +246,12 @@ const handleRegister = async () => {
       }
 
       try {
-        const res = await register(registerForm.username, registerForm.password, registerForm.role)
+        const res = await register(
+          registerForm.username, 
+          registerForm.password, 
+          registerForm.email,
+          registerForm.city
+        )
         if (res.code === 200) {
           ElMessage.success('注册成功')
           activeTab.value = 'login'
@@ -278,8 +292,14 @@ const registerRules = {
       trigger: 'blur'
     }
   ],
-  role: [{ required: true, message: '请选择用户角色', trigger: 'change' }],
-  captcha: [{ required: true, message: '请输入验证码', trigger: 'blur' }]
+  captcha: [{ required: true, message: '请输入验证码', trigger: 'blur' }],
+  email: [
+    { required: true, message: '请输入邮箱地址', trigger: 'blur' },
+    { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }
+  ],
+  city: [
+    { required: true, message: '请输入所在城市', trigger: 'blur' }
+  ]
 }
 </script>
 
@@ -289,11 +309,16 @@ const registerRules = {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #f5f5f5;
+  background: url('@/assets/background.png') no-repeat center center fixed;
+  background-size: cover;
 }
 
 .login-card {
   width: 400px;
+  background-color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border-radius: 8px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
 }
 
 .captcha-container {

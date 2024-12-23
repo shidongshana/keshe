@@ -14,6 +14,9 @@
           <span class="user-info">
             <el-avatar :size="30" :src="userAvatar" />
             <span class="username">{{ username }}</span>
+            <el-tag size="small" :type="roleType" class="role-tag">
+              {{ roleName }}
+            </el-tag>
           </span>
           <template #dropdown>
             <el-dropdown-menu>
@@ -55,7 +58,7 @@
           </el-sub-menu>
 
           <!-- 订单管理 -->
-          <el-sub-menu index="3">
+          <el-sub-menu index="3" v-if="!isNormalUser">
             <template #title>
               <el-icon><ShoppingCart /></el-icon>
               <span>订单</span>
@@ -67,7 +70,7 @@
           </el-sub-menu>
 
           <!-- 营销管理 -->
-          <el-sub-menu index="4">
+          <el-sub-menu index="4" v-if="!isNormalUser">
             <template #title>
               <el-icon><PieChart /></el-icon>
               <span>营销</span>
@@ -82,7 +85,7 @@
           </el-sub-menu>
 
           <!-- 权限管理 -->
-          <el-sub-menu index="5">
+          <el-sub-menu index="5" v-if="!isNormalUser">
             <template #title>
               <el-icon><Setting /></el-icon>
               <span>权限</span>
@@ -106,10 +109,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getUserName, getUserInfo } from '@/api/auth'
+import eventBus from '@/utils/eventBus'
 import {
   House,
   Setting,
@@ -127,6 +131,9 @@ const route = useRoute()
 const username = ref('')
 const userAvatar = ref('')
 const activeMenu = computed(() => route.path)
+const roleName = ref('')
+const roleType = ref('')
+const userRole = ref('')
 
 // 获取用户信息
 const fetchUserInfo = async () => {
@@ -135,14 +142,51 @@ const fetchUserInfo = async () => {
     if (res.code === 200) {
       username.value = res.data.user.username
       userAvatar.value = res.data.user.avatar
+      
+      // 从role字符串中提取角色信息
+      const roleStr = res.data.role
+      if (roleStr.includes('name=')) {
+        const nameMatch = roleStr.match(/name=([^,]+)/)
+        const codeMatch = roleStr.match(/code=([^,]+)/)
+        
+        roleName.value = nameMatch ? nameMatch[1] : '未知角色'
+        userRole.value = codeMatch ? codeMatch[1] : ''
+        
+        // 根据角色code设置标签类型
+        if (codeMatch) {
+          switch (codeMatch[1]) {
+            case 'admin':
+              roleType.value = 'danger'
+              break
+            case 'manager':
+              roleType.value = 'warning'
+              break
+            case 'user':
+              roleType.value = 'info'
+              break
+            default:
+              roleType.value = ''
+          }
+        }
+      }
     }
   } catch (error) {
     console.error('获取用户信息失败:', error)
   }
 }
 
+// 监听用户信息更新事件
+eventBus.on('updateUserInfo', () => {
+  fetchUserInfo()
+})
+
 onMounted(() => {
   fetchUserInfo()
+})
+
+// 组件卸载时移除事件监听
+onUnmounted(() => {
+  eventBus.off('updateUserInfo')
 })
 
 const handleCommand = (command) => {
@@ -159,6 +203,9 @@ const handleCommand = (command) => {
     }).catch(() => {})
   }
 }
+
+// 添加计算属性来判断是否为普通用户
+const isNormalUser = computed(() => userRole.value === 'user')
 </script>
 
 <style scoped>
@@ -212,5 +259,9 @@ const handleCommand = (command) => {
 .el-main {
   background-color: #f0f2f5;
   padding: 20px;
+}
+
+.role-tag {
+  margin-left: 8px;
 }
 </style> 

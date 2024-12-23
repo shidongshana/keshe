@@ -7,5 +7,5 @@ public class ProductImage {
     private Long id;
     private Long product_id;
     private String image_url;
-    private Boolean is_main;
+    private Long is_main;
 }

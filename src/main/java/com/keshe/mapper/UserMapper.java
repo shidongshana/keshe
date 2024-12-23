@@ -43,8 +43,8 @@ public interface UserMapper {
     @Select("SELECT * FROM sys_user")
     List<SysUser> AllUser();
 
-    @Update("UPDATE sys_user SET username = #{username}, email = #{email}, " +
-            "city = #{city}, status = #{status}, updated = #{updated} " +
+    @Update("UPDATE sys_user SET username = #{username} ,email = #{email}, " +
+            "city = #{city}, status = #{status},avatar = #{avatar}, updated = #{updated} " +
             "WHERE id = #{id}")
     int updateUser(SysUser user);
 

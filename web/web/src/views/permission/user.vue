@@ -1,8 +1,9 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { test5, updateUser, updateUserStatus, getUserList } from '@/api/auth.js'
-import { Search } from '@element-plus/icons-vue'
+import { test5, updateUser, updateUserStatus, getUserList, uploadOssFile, updateUserAvatar } from '@/api/auth.js'
+import { Search, Plus } from '@element-plus/icons-vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
+import eventBus from '@/utils/eventBus'
 
 const searchQuery = ref('')
 const tableData = ref([])
@@ -15,7 +16,11 @@ const editForm = ref({
   username: '',
   email: '',
   city: '',
-  status: 1
+  status: 1,
+  avatar: '',
+  created: null,
+  updated: null,
+  lastLogin: null
 })
 
 // 表单校验规则
@@ -59,12 +64,16 @@ const handleEdit = (row) => {
     username: row.username,
     email: row.email,
     city: row.city,
-    status: row.status
+    status: row.status,
+    avatar: row.avatar,
+    created: row.created,
+    updated: row.updated,
+    lastLogin: row.lastLogin
   }
   dialogVisible.value = true
 }
 
-// 提交编辑表单
+// 修改提交编辑表单方法
 const editFormRef = ref(null)
 const handleSubmit = async () => {
   if (!editFormRef.value) return
@@ -72,11 +81,25 @@ const handleSubmit = async () => {
   await editFormRef.value.validate(async (valid) => {
     if (valid) {
       try {
-        const response = await updateUser(editForm.value)
+        const updateData = {
+          ...editForm.value,
+          avatar: editForm.value.avatar,
+          created: editForm.value.created,
+          updated: editForm.value.updated,
+          lastLogin: editForm.value.lastLogin
+        }
+
+        console.log('Update data:', updateData)
+        
+        const response = await updateUser(updateData)
         if (response.code === 200) {
           ElMessage.success('更新成功')
+          const currentUsername = localStorage.getItem('currentUsername')
+          if (currentUsername === updateData.username) {
+            eventBus.emit('updateUserInfo')
+          }
           dialogVisible.value = false
-          fetchUsers() // 重新获取用户列表
+          fetchUsers()
         } else {
           ElMessage.error(response.message || '更新失败')
         }
@@ -117,7 +140,7 @@ const handleDelete = (row) => {
   })
 }
 
-// 处理页码改变
+// 处理码改变
 const handleCurrentChange = (val) => {
   currentPage.value = val
   fetchUsers()
@@ -128,6 +151,43 @@ const handleSizeChange = (val) => {
   pageSize.value = val
   currentPage.value = 1
   fetchUsers()
+}
+
+// 修改头像上传处理函数
+const handleAvatarSuccess = async (options) => {
+  try {
+    const formData = new FormData()
+    formData.append('file', options.file)
+    const result = await uploadOssFile(formData)
+    console.log('Upload result:', result)
+    
+    if (result.code === 200) {
+      const url = result.data
+      editForm.value.avatar = url
+      await updateUserAvatar(url)
+      eventBus.emit('updateUserInfo')
+      ElMessage.success('头像上传成功')
+    } else {
+      throw new Error(result.message || '上传失败')
+    }
+  } catch (error) {
+    console.error('头像上传失败:', error)
+    ElMessage.error('头像上传失败: ' + (error.message || '未知错误'))
+  }
+}
+
+// 在头像上传前验证
+const beforeAvatarUpload = (file) => {
+  const isJPG = file.type === 'image/jpeg' || file.type === 'image/png'
+  const isLt2M = file.size / 1024 / 1024 < 2
+
+  if (!isJPG) {
+    ElMessage.error('头像只能是 JPG 或 PNG 格式!')
+  }
+  if (!isLt2M) {
+    ElMessage.error('头像大小不能超过 2MB!')
+  }
+  return isJPG && isLt2M
 }
 
 onMounted(() => {
@@ -156,13 +216,24 @@ onMounted(() => {
       <!-- 表格区域 -->
       <el-table :data="tableData" style="width: 100%" border>
         <el-table-column type="index" label="序号" width="70" align="center" />
+        <el-table-column label="头像" width="100" align="center">
+          <template #default="scope">
+            <el-avatar 
+              :size="40" 
+              :src="scope.row.avatar"
+              :fit="'cover'"
+            >
+              <span>{{ scope.row.username ? scope.row.username.charAt(0).toUpperCase() : 'U' }}</span>
+            </el-avatar>
+          </template>
+        </el-table-column>
         <el-table-column prop="username" label="账号" width="120" />
         <el-table-column prop="email" label="邮箱" width="180" />
         <el-table-column prop="city" label="城市" width="120" />
         <el-table-column prop="created" label="创建时间" width="180" />
         <el-table-column prop="updated" label="更新时间" width="180" />
 
-        <!-- 状态��� -->
+        <!-- 状态 -->
         <el-table-column label="状态" width="100" align="center">
           <template #default="scope">
             <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'">
@@ -234,6 +305,19 @@ onMounted(() => {
               :inactive-value="0"
             />
           </el-form-item>
+          <el-form-item label="头像">
+            <el-upload
+              class="avatar-uploader"
+              :action="''"
+              :show-file-list="false"
+              :before-upload="beforeAvatarUpload"
+              :http-request="handleAvatarSuccess"
+              :auto-upload="true"
+            >
+              <img v-if="editForm.avatar" :src="editForm.avatar" class="avatar" />
+              <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
+            </el-upload>
+          </el-form-item>
         </el-form>
         <template #footer>
           <span class="dialog-footer">
@@ -281,5 +365,37 @@ onMounted(() => {
 
 :deep(.el-form-item) {
   margin-bottom: 20px;
+}
+
+.avatar-uploader {
+  text-align: center;
+}
+
+.avatar-uploader .el-upload {
+  border: 1px dashed var(--el-border-color);
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: var(--el-transition-duration-fast);
+}
+
+.avatar-uploader .el-upload:hover {
+  border-color: var(--el-color-primary);
+}
+
+.avatar-uploader-icon {
+  font-size: 28px;
+  color: #8c939d;
+  width: 100px;
+  height: 100px;
+  text-align: center;
+  line-height: 100px;
+}
+
+.avatar {
+  width: 100px;
+  height: 100px;
+  display: block;
 }
 </style>

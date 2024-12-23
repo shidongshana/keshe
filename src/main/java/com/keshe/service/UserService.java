@@ -107,8 +107,9 @@ public class UserService implements UserDetailsService {
         if (user.getPassword() != null && !user.getPassword().isEmpty()) {
             user.setPassword(passwordEncoder.encode(user.getPassword()));
         }
-        
+        System.out.println(user);
         int result = userMapper.updateUser(user);
+        System.out.println(result);
         if (result == 0) {
             throw new RuntimeException("更新失败，用户不存在");
         }
@@ -144,4 +145,17 @@ public class UserService implements UserDetailsService {
         
         return result;
     }
+
+    public String updateAvatar(String name, String avatar) {
+        SysUser user = userMapper.getUserByUsername(name);
+        if (user == null) {
+            throw new UsernameNotFoundException("用户不存在");
+        }
+        user.setAvatar(avatar);
+        userMapper.updateUser(user);
+        return avatar;
+    }
+
+
+
 }

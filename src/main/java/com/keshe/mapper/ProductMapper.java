@@ -34,6 +34,13 @@ public interface ProductMapper {
     @Select("SELECT * FROM product_image WHERE product_id = #{product_id}")
     List<ProductImage> findImages(Long product_id);
 
+
+    @Update("UPDATE product_image SET image_url = #{image_url} WHERE product_id = #{id}")
+    void updateImage(ProductImage productImage);
+
+    @Insert("INSERT INTO product_image(product_id, image_url, is_main) VALUES(#{product_id}, #{image_url}, #{is_main})")
+    void insertImage(ProductImage productImage);
+
     @Select("SELECT * FROM product LIMIT #{offset}, #{limit}")
     List<Product> findPage(@Param("offset") int offset, @Param("limit") int limit);
 
@@ -45,4 +52,10 @@ public interface ProductMapper {
 
     @Select("SELECT COUNT(*) FROM product WHERE name LIKE CONCAT('%',#{name},'%')")
     long countByName(String name);
+
+
+    //返回product表id当前自动递增的最大值
+    @Select("SELECT MAX(id) FROM product")
+    long findMaxId();
+
 }

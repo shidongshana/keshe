@@ -1,8 +1,9 @@
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import Editor from '@tinymce/tinymce-vue'
 import { Plus } from '@element-plus/icons-vue'  // 添加图标导入
+import { getAllCategories, getAllBrands, uploadOssFile, addProduct } from '@/api/auth'
 
 // 步骤条相关
 const active = ref(0)
@@ -14,6 +15,7 @@ const steps = [
 // 商品基本信息表单
 const productForm = reactive({
   category_id: '',
+  type_id: '',
   name: '',
   subtitle: '',
   brand_id: '',
@@ -25,18 +27,20 @@ const productForm = reactive({
   unit: '',
   weight: 0,
   sort: 0,
+  status: 1,  // 添加状态字段，默认为1
   album: [], // 商品相册
+  image_url: '', // 添加主图URL字段
   detail: '' // 商品详情
 })
 
-// 商品属性表单
+// 商品属性表单可以删除
 const attributeForm = reactive({
-  attribute_type: '',
-  specs: []  // 用于存储规格数据
+  // 不再需要属性相关的字段
 })
 
 // 表单校验规则
 const rules = {
+  type_id: [{ required: true, message: '请选择商品类型', trigger: 'change' }],
   category_id: [{ required: true, message: '请选择商品分类', trigger: 'change' }],
   name: [{ required: true, message: '请输入商品名称', trigger: 'blur' }],
   brand_id: [{ required: true, message: '请选择商品品牌', trigger: 'change' }],
@@ -44,13 +48,57 @@ const rules = {
   stock: [{ required: true, message: '请输入商品库存', trigger: 'blur' }]
 }
 
+// 处理自定义上传
+const handleCustomUpload = async (options) => {
+  try {
+    const formData = new FormData()
+    formData.append('file', options.file)
+    
+    const response = await uploadOssFile(formData)
+    if (response.code === 200) {
+      // 上传成功，将返回的URL添加到相册数组
+      productForm.album.push(response.data)
+      // 设置第一张图片为主图
+      if (!productForm.image_url) {
+        productForm.image_url = response.data
+      }
+      ElMessage.success('图片上传成功')
+      options.onSuccess(response)
+    } else {
+      ElMessage.error('图片上传失败')
+      options.onError('上传失败')
+    }
+  } catch (error) {
+    console.error('图片上传错误:', error)
+    ElMessage.error('图片上传出错')
+    options.onError('上传出错')
+  }
+}
+
 // 图片上传相关配置
 const uploadConfig = {
-  action: '#',  // 临时设置，实际使用时替换为真实接口
+  action: '',  // 使用空字符串，因为我们使用自定义上传
   multiple: true,
   'show-file-list': true,
   'list-type': "picture-card",
-  'auto-upload': false  // 禁用自动上传
+  'auto-upload': true,  // 改为true，允许自动上传
+  'http-request': handleCustomUpload  // 使用自定义上传方法
+}
+
+// 在图片上传前验证
+const beforeUpload = (file) => {
+  const isJPGOrPNG = file.type === 'image/jpeg' || file.type === 'image/png'
+  const isLt2M = file.size / 1024 / 1024 < 2
+
+  if (!isJPGOrPNG) {
+    ElMessage.error('只能上传 JPG 或 PNG 格式的图片!')
+    return false
+  }
+  if (!isLt2M) {
+    ElMessage.error('图片大小不能超过 2MB!')
+    return false
+  }
+  return true
 }
 
 // 图片预览相关
@@ -63,9 +111,16 @@ const handlePreview = (uploadFile) => {
   dialogVisible.value = true
 }
 
-// 处理图片移除
-const handleRemove = (uploadFile, uploadFiles) => {
-  console.log(uploadFile, uploadFiles)
+// 修改图片移除处理
+const handleRemove = (uploadFile) => {
+  const index = productForm.album.indexOf(uploadFile.url)
+  if (index > -1) {
+    productForm.album.splice(index, 1)
+    // 如果删除的是主图，则设置新的主图
+    if (uploadFile.url === productForm.image_url) {
+      productForm.image_url = productForm.album[0] || ''
+    }
+  }
 }
 
 // 处理超出限制
@@ -83,11 +138,11 @@ const editorConfig = {
   base_url: '/tinymce',
   height: 500,
   resize: true,  // 允许调整高度
-  branding: false,  // 去除 TinyMCE 品牌标识
+  branding: false,  // ��除 TinyMCE 品牌标识
   statusbar: true,  // 显示状态栏
   toolbar_sticky: true,
   
-  // 精简插件列表，只保留基本功能
+  // 精����插件列表，只保留基本功能
   plugins: [
     'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
     'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
@@ -148,77 +203,105 @@ const nextStep = () => {
   }
 }
 
-// 上一步
+// 上��步
 const prevStep = () => {
   if (active.value > 0) {
     active.value--
   }
 }
 
-// 添加商品属性
-const addAttribute = () => {
-  attributeForm.attributes.push({
-    name: '',
-    value: ''
-  })
+// 修改提交表单方法
+const submitForm = async () => {
+  const formData = {
+    category_id: productForm.category_id,
+    type_id: productForm.type_id,
+    name: productForm.name,
+    subtitle: productForm.subtitle,
+    brand_id: productForm.brand_id,
+    description: productForm.detail,
+    product_sn: productForm.product_sn,
+    price: productForm.price,
+    market_price: productForm.market_price,
+    stock: productForm.stock,
+    unit: productForm.unit,
+    weight: productForm.weight,
+    sort: productForm.sort,
+    status: productForm.status,
+    image_url: productForm.image_url,
+    detail: productForm.detail
+  }
+
+  try {
+    const response = await addProduct(formData)
+    if (response.code === 200) {
+      ElMessage.success('商品添加成功')
+      // 可以在这里添加成功后的处理，比如清空表单或跳转
+    } else {
+      ElMessage.error(response.message || '添加失败')
+    }
+  } catch (error) {
+    console.error('添加商品失败:', error)
+    ElMessage.error('添加失败，请重试')
+  }
 }
 
-// 删除商品属性
-const removeAttribute = (index) => {
-  attributeForm.attributes.splice(index, 1)
+// 添加类型列表数据
+const typeOptions = ref([])
+
+// 获取类型数据
+const fetchTypes = async () => {
+  try {
+    const response = await getAllCategories() // 这里使用的是types接口
+    if (response.code === 200) {
+      typeOptions.value = response.data.map(item => ({
+        value: item.id,
+        label: item.name,
+        category_id: item.category_id // 保存category_id用于联动
+      }))
+    }
+  } catch (error) {
+    console.error('获取类型列表失败:', error)
+  }
 }
 
-// 提交表单
-const submitForm = () => {
-  // TODO: 实现提交逻辑
-  ElMessage.success('提交成功')
+// 监听类型选择变化
+const handleTypeChange = (typeId) => {
+  // 找到选中的类型
+  const selectedType = typeOptions.value.find(type => type.value === typeId)
+  if (selectedType) {
+    // 自动设置对应的分类ID
+    productForm.category_id = selectedType.category_id
+  }
 }
 
-// 添加规格
-const addSpec = () => {
-  attributeForm.specs.push({
-    price: 0,
-    promotion_price: 0,
-    stock: 0,
-    warning_stock: 0,
-    sku: ''
-  })
+// 添加品牌列表数据
+const brandOptions = ref([])
+
+// 获取品牌数据
+const fetchBrands = async () => {
+  try {
+    const response = await getAllBrands()
+    if (response.code === 200) {
+      brandOptions.value = response.data.map(item => ({
+        value: item.id,
+        label: item.name
+      }))
+    }
+  } catch (error) {
+    console.error('获取品牌列表失败:', error)
+  }
 }
 
-// 删除规格
-const removeSpec = (index) => {
-  attributeForm.specs.splice(index, 1)
+// 监听富文本编辑器内容变化
+const handleEditorChange = (content) => {
+  productForm.description = content // 将富文本内容同步到description
 }
 
-// 批量设置价格
-const batchSetPrice = () => {
-  ElMessageBox.prompt('请输入价格', '批量设置价格', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    inputPattern: /^\d+(\.\d{0,2})?$/,
-    inputErrorMessage: '请输入正确的价格格式'
-  }).then(({ value }) => {
-    attributeForm.specs.forEach(spec => {
-      spec.price = Number(value)
-    })
-    ElMessage.success('批量设置价格成功')
-  }).catch(() => {})
-}
-
-// 批量设置库存
-const batchSetStock = () => {
-  ElMessageBox.prompt('请输入库存数量', '批量设置库存', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    inputPattern: /^\d+$/,
-    inputErrorMessage: '请输入正确的库存数量'
-  }).then(({ value }) => {
-    attributeForm.specs.forEach(spec => {
-      spec.stock = Number(value)
-    })
-    ElMessage.success('批量设置库存成功')
-  }).catch(() => {})
-}
+// 在组件挂载时获取分类和品牌数
+onMounted(() => {
+  fetchTypes()
+  fetchBrands()
+})
 </script>
 
 <template>
@@ -244,10 +327,23 @@ const batchSetStock = () => {
         label-width="120px"
         class="product-form"
       >
-        <el-form-item label="商品分类" prop="category_id">
-          <el-select v-model="productForm.category_id" placeholder="请选择商品分类">
-            <!-- TODO: 添加分类选项 -->
+        <el-form-item label="商品类型" prop="type_id">
+          <el-select 
+            v-model="productForm.type_id" 
+            placeholder="请选择商品类型"
+            @change="handleTypeChange"
+          >
+            <el-option
+              v-for="item in typeOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
           </el-select>
+        </el-form-item>
+
+        <el-form-item label="商品分类" prop="category_id">
+          <el-input v-model="productForm.category_id" disabled />
         </el-form-item>
 
         <el-form-item label="商品名称" prop="name">
@@ -260,7 +356,12 @@ const batchSetStock = () => {
 
         <el-form-item label="商品品牌" prop="brand_id">
           <el-select v-model="productForm.brand_id" placeholder="请选择商品品牌">
-            <!-- TODO: 添加品牌选项 -->
+            <el-option
+              v-for="item in brandOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
           </el-select>
         </el-form-item>
 
@@ -291,94 +392,27 @@ const batchSetStock = () => {
         <el-form-item label="排序" prop="sort">
           <el-input-number v-model="productForm.sort" :min="0" />
         </el-form-item>
+
+        <el-form-item label="商品状态" prop="status">
+          <el-switch
+            v-model="productForm.status"
+            :active-value="1"
+            :inactive-value="0"
+            active-text="上架"
+            inactive-text="下架"
+          />
+        </el-form-item>
       </el-form>
     </div>
 
-    <!-- 第二步：商品属性、相册和详情 -->
+    <!-- 第二步：修改为只包含图片上传和富文本编辑器 -->
     <div class="form-container" v-if="active === 1">
-      <el-form :model="attributeForm" label-width="120px">
-        <!-- 商品规格部分 -->
-        <el-form-item label="属性类型">
-          <el-select v-model="attributeForm.attribute_type" placeholder="请选择属性类型">
-            <el-option label="规格" value="specification" />
-            <el-option label="参数" value="parameter" />
-          </el-select>
-        </el-form-item>
-
-        <!-- 商品规格表格 -->
-        <div class="spec-table">
-          <el-table :data="attributeForm.specs" border style="width: 100%">
-            <el-table-column label="销售价格" width="180">
-              <template #default="scope">
-                <el-input-number 
-                  v-model="scope.row.price" 
-                  :precision="2" 
-                  :step="0.1"
-                  placeholder="销售价格"
-                />
-              </template>
-            </el-table-column>
-            <el-table-column label="促销价格" width="180">
-              <template #default="scope">
-                <el-input-number 
-                  v-model="scope.row.promotion_price" 
-                  :precision="2" 
-                  :step="0.1"
-                  placeholder="促销价格"
-                />
-              </template>
-            </el-table-column>
-            <el-table-column label="商品库存" width="180">
-              <template #default="scope">
-                <el-input-number 
-                  v-model="scope.row.stock" 
-                  :min="0"
-                  placeholder="商品库存"
-                />
-              </template>
-            </el-table-column>
-            <el-table-column label="库存预警值" width="180">
-              <template #default="scope">
-                <el-input-number 
-                  v-model="scope.row.warning_stock" 
-                  :min="0"
-                  placeholder="库存预警值"
-                />
-              </template>
-            </el-table-column>
-            <el-table-column label="SKU编号" width="180">
-              <template #default="scope">
-                <el-input 
-                  v-model="scope.row.sku" 
-                  placeholder="SKU编号"
-                />
-              </template>
-            </el-table-column>
-            <el-table-column label="操作">
-              <template #default="scope">
-                <el-button 
-                  type="danger" 
-                  size="small" 
-                  @click="removeSpec(scope.$index)"
-                >
-                  删除
-                </el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-
-          <!-- 操作按钮组 -->
-          <div class="spec-operations">
-            <el-button type="primary" @click="addSpec">添加规格</el-button>
-            <el-button @click="batchSetPrice">批量设置价格</el-button>
-            <el-button @click="batchSetStock">批量设置库存</el-button>
-          </div>
-        </div>
-
+      <el-form label-width="120px">
         <!-- 商品相册 -->
         <el-form-item label="商品相册">
           <el-upload
             v-bind="uploadConfig"
+            :before-upload="beforeUpload"
             :on-preview="handlePreview"
             :on-remove="handleRemove"
             :on-exceed="handleExceed"
@@ -405,6 +439,7 @@ const batchSetStock = () => {
             :disabled="false"
             api-key="no-api-key"
             tinymce-script-src="/tinymce/tinymce.min.js"
+            @change="handleEditorChange"
           />
         </el-form-item>
       </el-form>
@@ -449,20 +484,6 @@ const batchSetStock = () => {
   max-width: 1200px;
 }
 
-.attributes-list {
-  margin: 20px 0;
-}
-
-.attribute-item {
-  display: flex;
-  align-items: flex-start;
-  margin-bottom: 10px;
-}
-
-.remove-btn {
-  margin-left: 10px;
-}
-
 :deep(.el-form-item__content) {
   flex-wrap: nowrap;
 }
@@ -475,22 +496,6 @@ const batchSetStock = () => {
 
 :deep(.tox-statusbar) {
   border-top: 1px solid #DCDFE6;
-}
-
-.spec-table {
-  margin: 20px auto;
-  max-width: 1200px;
-}
-
-.spec-operations {
-  margin: 20px auto;
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-}
-
-:deep(.el-input-number) {
-  width: 100%;
 }
 
 /* 添加图片上传相关样式 */
@@ -561,7 +566,6 @@ const batchSetStock = () => {
   transition: all 0.3s;
 }
 
-/* 激活状态 */
 .step-item.active .step-number {
   background-color: #409eff;
 }
@@ -570,7 +574,6 @@ const batchSetStock = () => {
   color: #409eff;
 }
 
-/* 完成状态 */
 .step-item.completed .step-number {
   background-color: #67c23a;
 }
