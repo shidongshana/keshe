@@ -14,7 +14,7 @@ export function generateCaptcha() {
 export function validateCaptcha(captcha) {
   const params = new URLSearchParams()
   params.append('captcha', captcha)
-  
+
   return request({
     url: '/api/captcha/validate',
     method: 'post',

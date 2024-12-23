@@ -189,7 +189,7 @@ const handleLogin = async () => {
   if (!loginFormRef.value) return
   await loginFormRef.value.validate(async (valid) => {
     if (valid) {
-      // 先验证验证码
+
       const captchaValid = await verifyCaptcha(loginForm.captcha)
       if (!captchaValid) {
         ElMessage.error('验证码错误')
