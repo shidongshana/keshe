@@ -1,7 +1,14 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getAllMenus, addMenu, updateMenu, updateMenuStatus } from '@/api/auth'
+import { 
+  getAllMenus, 
+  addMenu, 
+  updateMenu, 
+  updateMenuStatus,
+  getMenuRoles,
+  getRoleInfo as fetchRoleInfo
+} from '@/api/auth'
 
 const menuList = ref([])
 const dialogVisible = ref(false)
@@ -29,15 +36,67 @@ const rules = {
   path: [{ required: true, message: '请输入菜单路径', trigger: 'blur' }]
 }
 
-// 获取顶级菜单
+// 添加新的响应式变量
+const roleCache = ref(new Map()) // 用于缓存角色信息
+
+// 在 getMenus 函数后添加新的方法
+const getRoleMenus = async (menuId) => {
+  try {
+    const res = await getMenuRoles(menuId)
+    if (res.code === 200) {
+      return res.data.menus
+    }
+    return []
+  } catch (error) {
+    console.error('获取角色菜单失败:', error)
+    return []
+  }
+}
+
+// 添加获取角色详情的方法
+const fetchRoleDetails = async (roleId) => {
+  if (roleCache.value.has(roleId)) {
+    return roleCache.value.get(roleId)
+  }
+  
+  try {
+    const res = await fetchRoleInfo(roleId)
+    if (res.code === 200) {
+      const roleInfo = res.data.role
+      roleCache.value.set(roleId, roleInfo)
+      return roleInfo
+    }
+    return null
+  } catch (error) {
+    console.error('获取角色详情失败:', error)
+    return null
+  }
+}
+
+// 修改 getMenus 方法
 const getMenus = async () => {
   try {
     loading.value = true
     const res = await getAllMenus()
     if (res.code === 200) {
-      menuList.value = res.data.menus.filter(menu => menu.parent_id === 0)
+      const menus = res.data.menus.filter(menu => menu.parent_id === 0)
+      // 获取每个菜单的角色信息
+      for (const menu of menus) {
+        console.log('Processing menu:', menu)
+        const roleIds = await getRoleMenus(menu.id)
+        console.log('Role IDs:', roleIds)
+        // 获取每个角色的详细信息
+        const roleInfos = await Promise.all(
+          roleIds.map(roleId => fetchRoleDetails(roleId))
+        )
+        console.log('Role Infos:', roleInfos)
+        menu.roles = roleInfos.filter(role => role !== null)
+      }
+      menuList.value = menus
+      console.log('Final menu list:', menuList.value)
     }
   } catch (error) {
+    console.error('获取菜单列表失败:', error)
     ElMessage.error('获取菜单列表失败')
   } finally {
     loading.value = false
@@ -168,6 +227,21 @@ onMounted(() => {
           </el-tag>
         </template>
       </el-table-column>
+      <el-table-column prop="roles" label="可访问角色" min-width="200">
+        <template #default="scope">
+          <el-tag 
+            v-for="role in scope.row.roles" 
+            :key="role.id"
+            class="mx-1"
+            size="small"
+            :type="role.status === 1 ? 'success' : 'info'"
+            :title="role.remark"
+          >
+            {{ role.name }}
+          </el-tag>
+          <span v-if="!scope.row.roles?.length">暂无角色</span>
+        </template>
+      </el-table-column>
       <el-table-column label="操作" width="200">
         <template #default="scope">
           <el-button size="small" type="primary" @click="handleEdit(scope.row)">
@@ -272,5 +346,10 @@ onMounted(() => {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+}
+
+/* 添加新的样式 */
+.mx-1 {
+  margin: 0 4px;
 }
 </style>

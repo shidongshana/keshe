@@ -145,6 +145,26 @@ public class UserService implements UserDetailsService {
         
         return result;
     }
+    public Map<String, Object> searchUsersByPage(String name, int page, int pageSize){
+        // 计算偏移量
+        int offset = (page - 1) * pageSize;
+
+        // 获取分页数据
+        List<SysUser> users = userMapper.getUsersByUsernamePage(name, offset, pageSize);
+
+        // 获取总记录数
+        int total = userMapper.countByUsername(name);
+
+        // 构建返回结果
+        Map<String, Object> result = new HashMap<>();
+        result.put("records", users);
+        result.put("total", total);
+        result.put("page", page);
+        result.put("pageSize", pageSize);
+
+        return result;
+    }
+
 
     public String updateAvatar(String name, String avatar) {
         SysUser user = userMapper.getUserByUsername(name);

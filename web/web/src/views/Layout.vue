@@ -39,61 +39,61 @@
           text-color="#bfcbd9"
           active-text-color="#409EFF"
         >
-          <el-menu-item index="/home">
+          <el-menu-item v-if="isRouteAvailable('/home')" index="/home">
             <el-icon><House /></el-icon>
             <span>首页</span>
           </el-menu-item>
 
           <!-- 商品管理 -->
-          <el-sub-menu index="2">
+          <el-sub-menu index="2" v-if="isRouteAvailable('/product')">
             <template #title>
               <el-icon><Goods /></el-icon>
               <span>商品</span>
             </template>
-            <el-menu-item index="/product/list">商品列表</el-menu-item>
-            <el-menu-item index="/product/add">添加商品</el-menu-item>
-            <el-menu-item index="/product/category">商品分类</el-menu-item>
-            <el-menu-item index="/product/type">商品类型</el-menu-item>
-            <el-menu-item index="/product/brand">品牌管理</el-menu-item>
+            <el-menu-item v-if="isRouteAvailable('/product/list')" index="/product/list">商品列表</el-menu-item>
+            <el-menu-item v-if="isRouteAvailable('/product/add')" index="/product/add">添加商品</el-menu-item>
+            <el-menu-item v-if="isRouteAvailable('/product/category')" index="/product/category">商品分类</el-menu-item>
+            <el-menu-item v-if="isRouteAvailable('/product/type')" index="/product/type">商品类型</el-menu-item>
+            <el-menu-item v-if="isRouteAvailable('/product/brand')" index="/product/brand">品牌管理</el-menu-item>
           </el-sub-menu>
 
           <!-- 订单管理 -->
-          <el-sub-menu index="3" v-if="!isNormalUser">
+          <el-sub-menu index="3" v-if="isRouteAvailable('/order')">
             <template #title>
               <el-icon><ShoppingCart /></el-icon>
               <span>订单</span>
             </template>
-            <el-menu-item index="/order/list">订单列表</el-menu-item>
-            <el-menu-item index="/order/settings">订单设置</el-menu-item>
-            <el-menu-item index="/order/return">退货申请处理</el-menu-item>
-            <el-menu-item index="/order/reason">退货原因设置</el-menu-item>
+            <el-menu-item v-if="isRouteAvailable('/order/list')" index="/order/list">订单列表</el-menu-item>
+            <el-menu-item v-if="isRouteAvailable('/order/settings')" index="/order/settings">订单设置</el-menu-item>
+            <el-menu-item v-if="isRouteAvailable('/order/return')" index="/order/return">退货申请处理</el-menu-item>
+            <el-menu-item v-if="isRouteAvailable('/order/reason')" index="/order/reason">退货原因设置</el-menu-item>
           </el-sub-menu>
 
           <!-- 营销管理 -->
-          <el-sub-menu index="4" v-if="!isNormalUser">
+          <el-sub-menu index="4" v-if="isRouteAvailable('/marketing')">
             <template #title>
               <el-icon><PieChart /></el-icon>
               <span>营销</span>
             </template>
-            <el-menu-item index="/marketing/seckill">秒杀活动列表</el-menu-item>
-            <el-menu-item index="/marketing/coupon">优惠券列表</el-menu-item>
-            <el-menu-item index="/marketing/brand">品牌推荐</el-menu-item>
-            <el-menu-item index="/marketing/new">新品推荐</el-menu-item>
-            <el-menu-item index="/marketing/popular">人气推荐</el-menu-item>
-            <el-menu-item index="/marketing/topic">专题推荐</el-menu-item>
-            <el-menu-item index="/marketing/ad">广告列表</el-menu-item>
+            <el-menu-item v-if="isRouteAvailable('/marketing/seckill')" index="/marketing/seckill">秒杀活动列表</el-menu-item>
+            <el-menu-item v-if="isRouteAvailable('/marketing/coupon')" index="/marketing/coupon">优惠券列表</el-menu-item>
+            <el-menu-item v-if="isRouteAvailable('/marketing/brand')" index="/marketing/brand">品牌推荐</el-menu-item>
+            <el-menu-item v-if="isRouteAvailable('/marketing/new')" index="/marketing/new">新品推荐</el-menu-item>
+            <el-menu-item v-if="isRouteAvailable('/marketing/popular')" index="/marketing/popular">人气推荐</el-menu-item>
+            <el-menu-item v-if="isRouteAvailable('/marketing/topic')" index="/marketing/topic">专题推荐</el-menu-item>
+            <el-menu-item v-if="isRouteAvailable('/marketing/ad')" index="/marketing/ad">广告列表</el-menu-item>
           </el-sub-menu>
 
           <!-- 权限管理 -->
-          <el-sub-menu index="5" v-if="!isNormalUser">
+          <el-sub-menu index="5" v-if="isRouteAvailable('/permission')">
             <template #title>
               <el-icon><Setting /></el-icon>
               <span>权限</span>
             </template>
-            <el-menu-item index="/permission/user">用户列表</el-menu-item>
-            <el-menu-item index="/permission/role">角色列表</el-menu-item>
-            <el-menu-item index="/permission/menu">菜单列表</el-menu-item>
-            <el-menu-item index="/permission/resource">资源列表</el-menu-item>
+            <el-menu-item v-if="isRouteAvailable('/permission/user')" index="/permission/user">用户列表</el-menu-item>
+            <el-menu-item v-if="isRouteAvailable('/permission/role')" index="/permission/role">角色列表</el-menu-item>
+            <el-menu-item v-if="isRouteAvailable('/permission/menu')" index="/permission/menu">菜单列表</el-menu-item>
+            <el-menu-item v-if="isRouteAvailable('/permission/resource')" index="/permission/resource">资源列表</el-menu-item>
           </el-sub-menu>
         </el-menu>
       </el-aside>
@@ -109,10 +109,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, onUnmounted } from 'vue'
+import { ref, onMounted, computed, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getUserName, getUserInfo } from '@/api/auth'
+import { getUserName, getUserInfo, getRoleMenus, getMenuById } from '@/api/auth'
 import eventBus from '@/utils/eventBus'
 import {
   House,
@@ -134,6 +134,8 @@ const activeMenu = computed(() => route.path)
 const roleName = ref('')
 const roleType = ref('')
 const userRole = ref('')
+const roleId = ref('')
+const availableRoutes = ref([])
 
 // 获取用户信息
 const fetchUserInfo = async () => {
@@ -148,9 +150,12 @@ const fetchUserInfo = async () => {
       if (roleStr.includes('name=')) {
         const nameMatch = roleStr.match(/name=([^,]+)/)
         const codeMatch = roleStr.match(/code=([^,]+)/)
+        const idMatch = roleStr.match(/id=(\d+)/)
         
         roleName.value = nameMatch ? nameMatch[1] : '未知角色'
         userRole.value = codeMatch ? codeMatch[1] : ''
+        roleId.value = idMatch ? idMatch[1] : ''
+        console.log('当前用户角色:', roleName.value, userRole.value, roleId.value)
         
         // 根据角色code设置标签类型
         if (codeMatch) {
@@ -180,8 +185,71 @@ eventBus.on('updateUserInfo', () => {
   fetchUserInfo()
 })
 
-onMounted(() => {
-  fetchUserInfo()
+const fetchMenuPaths = async () => {
+  try {
+    console.log('当前角色ID:', roleId.value)
+    
+    if (!roleId.value) {
+      console.warn('未获取到用户角色ID')
+      return
+    }
+
+    const roleMenusRes = await getRoleMenus(roleId.value)
+    console.log('角色菜单响应:', roleMenusRes)
+    
+    if (roleMenusRes.code === 200 && roleMenusRes.data.menus) {
+      const menuPromises = roleMenusRes.data.menus.map(menu => 
+        getMenuById(menu.menu_id)
+      )
+      
+      const menuResults = await Promise.all(menuPromises)
+      console.log('菜单详情结果:', menuResults)
+      
+      // 保存可访问的路径
+      availableRoutes.value = menuResults
+        .filter(res => res.code === 200 && res.data.menu.path)
+        .map(res => res.data.menu.path)
+      
+      console.log('当前用户可访问的路径:', availableRoutes.value)
+
+      // 检查当前路由是否可访问
+      checkCurrentRoute()
+    }
+  } catch (error) {
+    console.error('获取菜单路径失败:', error)
+  }
+}
+
+// 添加检查当前路由的方法
+const checkCurrentRoute = () => {
+  const currentPath = route.path
+  if (currentPath !== '/login' && !availableRoutes.value.includes(currentPath)) {
+    ElMessage.error('您没有权限访问该页面')
+    router.push('/home')
+  }
+}
+
+// 添加路由监听
+watch(
+  () => route.path,
+  (newPath) => {
+    if (newPath !== '/login' && availableRoutes.value.length > 0) {
+      if (!availableRoutes.value.includes(newPath)) {
+        ElMessage.error('您没有权限访问该页面')
+        router.push('/home')
+      }
+    }
+  }
+)
+
+// 修改菜单显示逻辑
+const isRouteAvailable = (path) => {
+  return availableRoutes.value.includes(path)
+}
+
+onMounted(async () => {
+  await fetchUserInfo()
+  await fetchMenuPaths()
 })
 
 // 组件卸载时移除事件监听

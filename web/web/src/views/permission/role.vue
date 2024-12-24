@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getRoleList, addRole, updateRole, deleteRole } from '@/api/auth'
 
@@ -13,6 +13,8 @@ const roleForm = ref({
   code: '',
   remark: ''
 })
+
+
 
 // 表单规则
 const rules = {
@@ -35,25 +37,32 @@ const getRoles = async () => {
   }
 }
 
+const roleFormRef = ref(null)
+
 // 添加角色
 const handleAdd = async (formEl) => {
+  console.log('表单数据:', roleForm.value)
   if (!formEl) return
   await formEl.validate(async (valid) => {
     if (valid) {
       try {
-        const res = await addRole(roleForm.value)
+        const params = {
+          name: roleForm.value.name,
+          code: roleForm.value.code,
+          remark: roleForm.value.remark
+        }
+        console.log('发送到后端的数据:', params)
+        const res = await addRole(params)
         if (res.code === 200) {
           ElMessage.success('添加成功')
           dialogVisible.value = false
           getRoles()
-          // 重置表单
-          roleForm.value = {
-            name: '',
-            code: '',
-            remark: ''
-          }
+          formEl.resetFields()
+        } else {
+          ElMessage.error(res.message || '添加失败')
         }
       } catch (error) {
+        console.error('添加角色错误:', error)
         ElMessage.error('添加失败')
       }
     }
@@ -86,10 +95,19 @@ const editForm = ref({...roleForm.value})
 const editDialogVisible = ref(false)
 const currentEditId = ref(null)
 
+// 添加 editFormRef 引用
+const editFormRef = ref(null)
+
 const handleEdit = (row) => {
   currentEditId.value = row.id
   editForm.value = {...row}
   editDialogVisible.value = true
+  // 等待 DOM 更新后重置表单验证状态
+  nextTick(() => {
+    if (editFormRef.value) {
+      editFormRef.value.clearValidate()
+    }
+  })
 }
 
 const handleUpdate = async (formEl) => {
@@ -97,16 +115,22 @@ const handleUpdate = async (formEl) => {
   await formEl.validate(async (valid) => {
     if (valid) {
       try {
-        const res = await updateRole({
+        const params = {
           id: currentEditId.value,
-          ...editForm.value
-        })
+          name: editForm.value.name,
+          code: editForm.value.code,
+          remark: editForm.value.remark
+        }
+        const res = await updateRole(params)
         if (res.code === 200) {
           ElMessage.success('更新成功')
           editDialogVisible.value = false
           getRoles()
+        } else {
+          ElMessage.error(res.message || '更新失败')
         }
       } catch (error) {
+        console.error('更新角色错误:', error)
         ElMessage.error('更新失败')
       }
     }
@@ -161,7 +185,12 @@ onMounted(() => {
 
     <!-- 编辑角色对话框 -->
     <el-dialog v-model="editDialogVisible" title="编辑角色" width="500px">
-      <el-form ref="editFormRef" :model="editForm" :rules="rules" label-width="100px">
+      <el-form 
+        ref="editFormRef"
+        :model="editForm"
+        :rules="rules"
+        label-width="100px"
+      >
         <el-form-item label="角色名称" prop="name">
           <el-input v-model="editForm.name" />
         </el-form-item>

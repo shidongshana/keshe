@@ -50,7 +50,22 @@
         </template>
       </el-table-column>
       <el-table-column prop="created" label="创建时间" width="180" />
-      <el-table-column label="操作" width="200" fixed="right">
+      <el-table-column prop="roles" label="可访问角色" min-width="200">
+        <template #default="scope">
+          <el-tag 
+            v-for="role in scope.row.roles" 
+            :key="role.id"
+            class="mx-1"
+            size="small"
+            :type="role.status === 1 ? 'success' : 'info'"
+            :title="role.remark"
+          >
+            {{ role.name }}
+          </el-tag>
+          <span v-if="!scope.row.roles?.length">暂无角色</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" width="280" fixed="right">
         <template #default="scope">
           <el-button size="small" type="primary" @click="handleEdit(scope.row)">
             编辑
@@ -61,6 +76,13 @@
             @click="handleStatusChange(scope.row)"
           >
             {{ scope.row.status === 1 ? '禁用' : '启用' }}
+          </el-button>
+          <el-button 
+            size="small" 
+            type="warning"
+            @click="openRoleAssignDialog(scope.row)"
+          >
+            分配角色
           </el-button>
         </template>
       </el-table-column>
@@ -174,18 +196,63 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- 角色分配对话框 -->
+    <el-dialog 
+      v-model="roleDialogVisible" 
+      title="角色分配" 
+      width="500px"
+    >
+      <el-form>
+        <el-form-item label="选择角色">
+          <div v-if="allRoles.length === 0">暂无可选角色</div>
+          <el-checkbox-group v-model="selectedRoles">
+            <el-checkbox 
+              v-for="role in allRoles" 
+              :key="role.id" 
+              :label="role.id"
+            >
+              {{ role.name }}
+              <el-tooltip :content="role.remark" placement="top">
+                <el-icon class="el-icon-question"><QuestionFilled /></el-icon>
+              </el-tooltip>
+            </el-checkbox>
+          </el-checkbox-group>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="roleDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="handleRoleAssign">确定</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getAllMenus, addMenu, updateMenu, updateMenuStatus } from '@/api/auth'
+import { 
+  getAllMenus, 
+  addMenu, 
+  updateMenu, 
+  updateMenuStatus,
+  getMenuRoles,
+  getRoleInfo as fetchRoleInfo,
+  getRoleList,
+  addMenuRole,
+  deleteMenuRole
+} from '@/api/auth'
+import { QuestionFilled } from '@element-plus/icons-vue'
 
 const menuList = ref([])
 const dialogVisible = ref(false)
 const loading = ref(true)
 const editDialogVisible = ref(false)
+const roleDialogVisible = ref(false)
+const currentMenuId = ref(null)
+const selectedRoles = ref([])
 
 // 搜索表单
 const searchForm = ref({
@@ -213,7 +280,7 @@ const menuForm = ref({
   parent_id: 0
 })
 
-// 编辑表单数据
+// 编辑表单���据
 const editForm = ref({...menuForm.value})
 const currentEditId = ref(null)
 
@@ -221,6 +288,42 @@ const currentEditId = ref(null)
 const rules = {
   name: [{ required: true, message: '请输入菜单名称', trigger: 'blur' }],
   path: [{ required: true, message: '请输入菜单路径', trigger: 'blur' }]
+}
+
+// 用于缓存角色信息
+const roleCache = ref(new Map())
+
+// 获取角色相关的方法
+const getRoleMenus = async (menuId) => {
+  try {
+    const res = await getMenuRoles(menuId)
+    if (res.code === 200) {
+      return res.data.menus
+    }
+    return []
+  } catch (error) {
+    console.error('获取角色菜单失败:', error)
+    return []
+  }
+}
+
+const fetchRoleDetails = async (roleId) => {
+  if (roleCache.value.has(roleId)) {
+    return roleCache.value.get(roleId)
+  }
+  
+  try {
+    const res = await fetchRoleInfo(roleId)
+    if (res.code === 200) {
+      const roleInfo = res.data.role
+      roleCache.value.set(roleId, roleInfo)
+      return roleInfo
+    }
+    return null
+  } catch (error) {
+    console.error('获取角色详情失败:', error)
+    return null
+  }
 }
 
 // 获取菜单列表
@@ -231,6 +334,16 @@ const getMenus = async () => {
     if (res.code === 200) {
       // 过滤搜索条件
       let filteredMenus = res.data.menus
+      
+      // 获取每个菜单的角���信息
+      for (const menu of filteredMenus) {
+        const roleIds = await getRoleMenus(menu.id)
+        const roleInfos = await Promise.all(
+          roleIds.map(roleId => fetchRoleDetails(roleId))
+        )
+        menu.roles = roleInfos.filter(role => role !== null)
+      }
+
       if (searchForm.value.menuName) {
         filteredMenus = filteredMenus.filter(menu => 
           menu.name.toLowerCase().includes(searchForm.value.menuName.toLowerCase())
@@ -247,15 +360,13 @@ const getMenus = async () => {
         )
       }
       
-      // 更新总数
       pagination.value.total = filteredMenus.length
-      
-      // 分页处理
       const start = (pagination.value.currentPage - 1) * pagination.value.pageSize
       const end = start + pagination.value.pageSize
       menuList.value = filteredMenus.slice(start, end)
     }
   } catch (error) {
+    console.error('获取菜单列表失败:', error)
     ElMessage.error('获取菜单列表失败')
   } finally {
     loading.value = false
@@ -408,8 +519,102 @@ const getParentMenus = async () => {
   }
 }
 
+// 添加获取所有角色的方法
+const allRoles = ref([])
+
+const getAllRoles = async () => {
+  try {
+    const res = await getRoleList()
+    console.log('获取角色列表响应:', res)
+    if (res.code === 200) {
+      allRoles.value = res.data.roles
+      console.log('设置角色列表:', allRoles.value)
+    }
+  } catch (error) {
+    console.error('获取角色列表失败:', error)
+  }
+}
+
+// 添加打开角色分配对话框的方法
+const openRoleAssignDialog = async (row) => {
+  currentMenuId.value = row.id
+  selectedRoles.value = row.roles ? row.roles.map(role => role.id) : []
+  console.log('当前选中的角色:', selectedRoles.value)
+  await getAllRoles()
+  console.log('可选��角色列表:', allRoles.value)
+  roleDialogVisible.value = true
+}
+
+// 添加保存角色分配的方法
+const handleRoleAssign = async () => {
+  try {
+    const oldRoles = menuList.value.find(menu => menu.id === currentMenuId.value)?.roles || []
+    const oldRoleIds = oldRoles.map(role => role.id)
+    
+    // 找出需要添加和删除的角色
+    const rolesToAdd = selectedRoles.value.filter(id => !oldRoleIds.includes(id))
+    const rolesToDelete = oldRoleIds.filter(id => !selectedRoles.value.includes(id))
+    
+    console.log('当前菜单ID:', currentMenuId.value)
+    console.log('选中的角色:', selectedRoles.value)
+    console.log('原有角色:', oldRoleIds)
+    console.log('需要添加的角色:', rolesToAdd)
+    console.log('需要删除的角色:', rolesToDelete)
+    
+    // 执行添加操作
+    for (const roleId of rolesToAdd) {
+      try {
+        console.log('发送添加角色请求:', {
+          url: '/api/menu/role-menu/add',
+          data: {
+            roleId,
+            menuId: currentMenuId.value
+          }
+        })
+        const res = await addMenuRole(roleId, currentMenuId.value)
+        console.log('添加角色响应:', res)
+        if (res.code !== 200) {
+          throw new Error(res.message || '添加角色失败')
+        }
+      } catch (error) {
+        console.error('添加角色失败:', error)
+        throw error
+      }
+    }
+    
+    // 执行删除操作
+    for (const roleId of rolesToDelete) {
+      try {
+        console.log('发送删除角色请求:', {
+          url: '/api/menu/role-menu/delete',
+          data: {
+            roleId,
+            menuId: currentMenuId.value
+          }
+        })
+        const res = await deleteMenuRole(roleId, currentMenuId.value)
+        console.log('删除角色响应:', res)
+        if (res.code !== 200) {
+          throw new Error(res.message || '删除角色失败')
+        }
+      } catch (error) {
+        console.error('删除角色失败:', error)
+        throw error
+      }
+    }
+    
+    ElMessage.success('角色分配成功')
+    roleDialogVisible.value = false
+    getMenus() // 刷新菜单列表
+  } catch (error) {
+    console.error('角色分配失败:', error)
+    ElMessage.error(error.message || '角色分配失败')
+  }
+}
+
 onMounted(() => {
   getMenus()
+  getAllRoles()
 })
 </script>
 
@@ -439,5 +644,28 @@ onMounted(() => {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+}
+
+.mx-1 {
+  margin: 0 4px;
+}
+
+.el-checkbox {
+  margin-right: 15px;
+  margin-bottom: 10px;
+}
+
+.el-icon-question {
+  margin-left: 4px;
+  font-size: 14px;
+  color: #909399;
+  cursor: help;
+}
+
+.el-checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 0;
 }
 </style>

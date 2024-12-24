@@ -25,6 +25,8 @@ public interface RoleMapper {
     @Select("SELECT * FROM sys_role")
     List<SysRole> findAll();
 
+
+
     @Insert("INSERT INTO sys_role (name, code,remark,created) VALUES (#{name}, #{code}, #{remark}, #{created})")
     int insert(SysRole role);
 
@@ -34,4 +36,6 @@ public interface RoleMapper {
     @Update("UPDATE sys_role SET name = #{name}, code = #{code}, remark = #{remark} WHERE id = #{id}")
     int update(SysRole role);
 
+    @Update("UPDATE sys_user_role SET role_id = #{role_id} WHERE user_id = #{user_id}")
+    void updateRole(SysUserRole userRole);
 }

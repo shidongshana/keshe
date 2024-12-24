@@ -22,6 +22,10 @@ public class MenuService {
                 .filter(menu -> menu.getParent_id() == 0)
                 .collect(Collectors.toList());
     }
+
+    public SysMenu getMenuById(Long id) {
+        return menuMapper.getMenuById(id);
+    }
     
     public void insertMenu(SysMenu menu) {
         menuMapper.insertMenu(menu);
@@ -43,6 +47,18 @@ public class MenuService {
             menu.setUpdated(LocalDateTime.now());
             menuMapper.updateMenu(menu);
         }
+    }
+
+    public List<Long> getRoleMenus(Long menuId) {
+        return menuMapper.getRoleMenus(menuId);
+    }
+
+    public void insertRoleMenu(Long roleId, Long menuId) {
+        menuMapper.insertRoleMenu(roleId, menuId);
+    }
+
+    public void deleteRoleMenu(Long roleId, Long menuId) {
+        menuMapper.deleteRoleMenu(roleId, menuId);
     }
 
     public List<SysMenu> getAllMenus() {

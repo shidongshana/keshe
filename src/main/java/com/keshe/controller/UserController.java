@@ -147,6 +147,19 @@ public class UserController {
         }
     }
 
+    @GetMapping("/search")
+    public RestBean<Map<String, Object>> searchUsersByPage(
+            @RequestParam String name,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int pageSize) {
+        try {
+            Map<String, Object> result = userService.searchUsersByPage(name, page, pageSize);
+            return RestBean.success(result);
+        } catch (Exception e) {
+            return RestBean.failure(500, "搜索用户失败：" + e.getMessage());
+        }
+    }
+
     @PostMapping("/updateAvatar")
     public RestBean<String> updateAvatar(@RequestParam String avatar) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();

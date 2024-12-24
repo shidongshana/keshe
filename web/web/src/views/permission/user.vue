@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { test5, updateUser, updateUserStatus, getUserList, uploadOssFile, updateUserAvatar } from '@/api/auth.js'
+import { test5, updateUser, updateUserStatus, getUserList, uploadOssFile, updateUserAvatar, searchUsers, getRoleList, getUserRole, updateUserRole } from '@/api/auth.js'
 import { Search, Plus } from '@element-plus/icons-vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import eventBus from '@/utils/eventBus'
@@ -22,6 +22,8 @@ const editForm = ref({
   updated: null,
   lastLogin: null
 })
+const roles = ref([])
+const selectedRole = ref('')
 
 // 表单校验规则
 const rules = {
@@ -41,24 +43,51 @@ const rules = {
 // 获取用户列表
 const fetchUsers = async () => {
   try {
-    const response = await getUserList(currentPage.value, pageSize.value)
+    let response;
+    if (searchQuery.value) {
+      response = await searchUsers(searchQuery.value, currentPage.value, pageSize.value);
+    } else {
+      response = await getUserList(currentPage.value, pageSize.value);
+    }
+    
     if (response.code === 200) {
-      tableData.value = response.data.records
-      total.value = response.data.total
+      // 获取每个用户的角色信息
+      const usersWithRoles = await Promise.all(
+        response.data.records.map(async (user) => {
+          try {
+            const roleResponse = await getUserRole(user.id);
+            if (roleResponse.code === 200) {
+              return {
+                ...user,
+                roleId: roleResponse.data.role.role_id
+              };
+            }
+            return user;
+          } catch (error) {
+            console.error(`获取用户 ${user.id} 的角色失败:`, error);
+            return user;
+          }
+        })
+      );
+      
+      tableData.value = usersWithRoles;
+      total.value = response.data.total;
     }
   } catch (error) {
-    console.error('获取用户列表失败:', error)
+    console.error('获取用户列表失败:', error);
+    ElMessage.error('获取用户列表失败');
   }
 }
 
 // 搜索用户
 const handleSearch = () => {
-  currentPage.value = 1
-  fetchUsers()
+  currentPage.value = 1;
+  fetchUsers();
 }
 
 // 打开编辑对话框
-const handleEdit = (row) => {
+const handleEdit = async (row) => {
+  console.log('Editing user:', row)
   editForm.value = {
     id: row.id,
     username: row.username,
@@ -70,6 +99,19 @@ const handleEdit = (row) => {
     updated: row.updated,
     lastLogin: row.lastLogin
   }
+  
+  try {
+    const response = await getUserRole(row.id)
+    console.log('User role response:', response)
+    if (response.code === 200) {
+      selectedRole.value = response.data.role.role_id
+      console.log('Selected role:', selectedRole.value)
+    }
+  } catch (error) {
+    console.error('获取用户角色失败:', error)
+    ElMessage.error('获取用户角色失败')
+  }
+  
   dialogVisible.value = true
 }
 
@@ -88,11 +130,13 @@ const handleSubmit = async () => {
           updated: editForm.value.updated,
           lastLogin: editForm.value.lastLogin
         }
-
-        console.log('Update data:', updateData)
         
-        const response = await updateUser(updateData)
-        if (response.code === 200) {
+        const [userResponse, roleResponse] = await Promise.all([
+          updateUser(updateData),
+          updateUserRole(editForm.value.id, selectedRole.value)
+        ])
+
+        if (userResponse.code === 200 && roleResponse.code === 200) {
           ElMessage.success('更新成功')
           const currentUsername = localStorage.getItem('currentUsername')
           if (currentUsername === updateData.username) {
@@ -101,7 +145,7 @@ const handleSubmit = async () => {
           dialogVisible.value = false
           fetchUsers()
         } else {
-          ElMessage.error(response.message || '更新失败')
+          ElMessage.error('更新失败')
         }
       } catch (error) {
         console.error('更新用户信息失败:', error)
@@ -190,8 +234,24 @@ const beforeAvatarUpload = (file) => {
   return isJPG && isLt2M
 }
 
-onMounted(() => {
-  fetchUsers()
+// 获取角色列表
+const fetchRoles = async () => {
+  try {
+    const response = await getRoleList()
+    if (response.code === 200) {
+      // 确保 roles 数据结构正确
+      console.log('Roles response:', response.data)
+      roles.value = response.data.roles || []
+    }
+  } catch (error) {
+    console.error('获取角色列表失败:', error)
+    ElMessage.error('获取角色列表��败')
+  }
+}
+
+onMounted(async () => {
+  await fetchRoles() // 先获取角色列表
+  await fetchUsers() // 再获取用户列表
 })
 </script>
 
@@ -232,6 +292,13 @@ onMounted(() => {
         <el-table-column prop="city" label="城市" width="120" />
         <el-table-column prop="created" label="创建时间" width="180" />
         <el-table-column prop="updated" label="更新时间" width="180" />
+        <el-table-column label="角色" width="120">
+          <template #default="scope">
+            <el-tag size="small" type="info">
+              {{ roles.find(r => r.id === scope.row.roleId)?.name || '未分配' }}
+            </el-tag>
+          </template>
+        </el-table-column>
 
         <!-- 状态 -->
         <el-table-column label="状态" width="100" align="center">
@@ -239,6 +306,7 @@ onMounted(() => {
             <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'">
               {{ scope.row.status === 1 ? '启用' : '禁用' }}
             </el-tag>
+
           </template>
         </el-table-column>
 
@@ -317,6 +385,20 @@ onMounted(() => {
               <img v-if="editForm.avatar" :src="editForm.avatar" class="avatar" />
               <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
             </el-upload>
+          </el-form-item>
+          <el-form-item label="角色" prop="role">
+            <el-select 
+              v-model="selectedRole" 
+              placeholder="请选择角色"
+              :loading="!roles.length"
+            >
+              <el-option
+                v-for="role in roles"
+                :key="role.id"
+                :label="role.name"
+                :value="role.id"
+              />
+            </el-select>
           </el-form-item>
         </el-form>
         <template #footer>

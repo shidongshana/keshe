@@ -396,14 +396,15 @@ export const getRoleList = () => {
 }
 
 // 添加角色
-export const addRole = (roleData) => {
+export const addRole = (data) => {
   return request({
     url: '/api/role/add',
     method: 'post',
-    data: roleData,
     headers: {
+      'Content-Type': 'application/json',
       'Authorization': `Bearer ${JSON.parse(localStorage.getItem('credentials'))?.token}`
-    }
+    },
+    data
   })
 }
 
@@ -572,5 +573,119 @@ export function checkUserStatus(username) {
     url: '/api/user/status',
     method: 'get',
     params: { username }
+  })
+}
+
+// 搜索用户
+export function searchUsers(name, page = 1, pageSize = 10) {
+  return request({
+    url: '/api/user/search',
+    method: 'get',
+    params: {
+      name,
+      page,
+      pageSize
+    },
+    headers: {
+      'Authorization': `Bearer ${JSON.parse(localStorage.getItem('credentials'))?.token}`
+    }
+  })
+}
+
+// Get user role by user ID
+export const getUserRole = (userId) => {
+  return request({
+    url: `/api/role/${userId}`,
+    method: 'get',
+    headers: {
+      'Authorization': `Bearer ${JSON.parse(localStorage.getItem('credentials'))?.token}`
+    }
+  })
+}
+
+// Update user role
+export const updateUserRole = (userId, roleId) => {
+  return request({
+    url: '/api/role/update',
+    method: 'post',
+    params: {
+      userId,
+      roleId
+    },
+    headers: {
+      'Authorization': `Bearer ${JSON.parse(localStorage.getItem('credentials'))?.token}`
+    }
+  })
+}
+
+// 获取菜单的角色列表
+export function getMenuRoles(menuId) {
+  return request({
+    url: `/api/menu/role-menus?menuId=${menuId}`,
+    method: 'get'
+  })
+}
+
+// 获取角色详情
+export function getRoleInfo(roleId) {
+  return request({
+    url: `/api/role/role-info?id=${roleId}`,
+    method: 'get'
+  })
+}
+
+// 添加菜单角色关联
+export function addMenuRole(roleId, menuId) {
+  return request({
+    url: '/api/menu/role-menu/add',
+    method: 'post',
+    data: {
+      roleId,
+      menuId
+    },
+    headers: {
+      'Authorization': `Bearer ${JSON.parse(localStorage.getItem('credentials'))?.token}`,
+      'Content-Type': 'application/json'
+    }
+  })
+}
+
+// 删除菜单角色关联
+export function deleteMenuRole(roleId, menuId) {
+  return request({
+    url: '/api/menu/role-menu/delete',
+    method: 'post',
+    data: {
+      roleId,
+      menuId
+    },
+    headers: {
+      'Authorization': `Bearer ${JSON.parse(localStorage.getItem('credentials'))?.token}`,
+      'Content-Type': 'application/json'
+    }
+  })
+}
+
+// 获取角色的菜单列表
+export function getRoleMenus(roleId) {
+  return request({
+    url: `/api/role/role-menu`,
+    method: 'get',
+    params: { id: roleId },
+    headers: {
+      'Authorization': `Bearer ${JSON.parse(localStorage.getItem('credentials'))?.token}`
+    }
+  })
+}
+
+// 根据ID获取菜单详情
+export function getMenuById(menuId) {
+  return request({
+    url: `/api/menu/menubyid`,
+    method: 'get',
+    params: { id: menuId },
+    headers: {
+      'Authorization': `Bearer ${JSON.parse(localStorage.getItem('credentials'))?.token}`
+    }
   })
 }

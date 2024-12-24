@@ -35,6 +35,14 @@ public class RoleController {
         return RestBean.success(data);
     }
 
+    @GetMapping("role-info")
+    public RestBean<Map<String, Object>> getRoleInfo(@RequestParam Long id) {
+        SysRole role = roleService.getRoleById(id);
+        Map<String, Object> data = new HashMap<>();
+        data.put("role", role);
+        return RestBean.success(data);
+    }
+
     @GetMapping("/menu-info")
     public RestBean <Map<String, Object>> getMenuInfo() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -49,6 +57,13 @@ public class RoleController {
         return RestBean.success(data);
     }
 
+    @GetMapping("/role-menu")
+    public RestBean<Map<String, Object>> getRoleMenu(@RequestParam Long id) {
+        List<SysRoleMenu> menus = roleService.getRoleMenus(id);
+        Map<String, Object> data = new HashMap<>();
+        data.put("menus", menus);
+        return RestBean.success(data);
+    }
     @GetMapping("/all")
     public RestBean<Map<String,Object>> findAll() {
         Map<String,Object> data = new HashMap<>();
@@ -57,9 +72,9 @@ public class RoleController {
     }
 
     @PostMapping("/add")
-    public RestBean<Map<String,Object>> addRole(SysRole Role) {
+    public RestBean<Map<String,Object>> addRole(@RequestBody SysRole role) {
         Map<String,Object> data = new HashMap<>();
-        data.put("role", roleService.insert(Role));
+        data.put("role", roleService.insert(role));
         return RestBean.success(data);
     }
 
@@ -70,11 +85,22 @@ public class RoleController {
         return RestBean.success(data);
     }
 
-    @PutMapping("/update")
-    public RestBean<Map<String,Object>> updateRole(@RequestBody SysRole role) {
+    @GetMapping("/{id}")
+    public RestBean<Map<String,Object>> findRoleById(@PathVariable Long id) {
         Map<String,Object> data = new HashMap<>();
-        data.put("role", roleService.update(role));
+        data.put("role", roleService.getUserRoles(id));
         return RestBean.success(data);
+    }
+
+    @PostMapping("/update")
+    public RestBean<Map<String,Object>> updateRole(@RequestParam Long userId, @RequestParam Long roleId) {
+        SysUserRole userRole = new SysUserRole();
+        userRole.setUser_id(userId);
+        userRole.setRole_id(roleId);
+        Map<String,Object> data = new HashMap<>();
+        data.put("role", roleService.updateRole(userRole));
+        return RestBean.success(data);
+
     }
     
 

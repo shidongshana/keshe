@@ -11,7 +11,9 @@ import java.util.List;
 public interface UserMapper {
     @Select("SELECT * FROM sys_user WHERE username = #{username}")
     SysUser getUserByUsername(String username);
-    
+
+
+
     @Select("SELECT * FROM sys_user WHERE id = #{id}")
     SysUser getUserById(Long id);
     
@@ -57,8 +59,18 @@ public interface UserMapper {
     @Select("SELECT * FROM sys_user LIMIT #{offset}, #{pageSize}")
     List<SysUser> getUsersByPage(@Param("offset") int offset, @Param("pageSize") int pageSize);
 
+
+    @Select("SELECT * FROM sys_user WHERE username LIKE CONCAT('%',#{username},'%') LIMIT #{offset}, #{pageSize}")
+    List<SysUser> getUsersByUsernamePage(@Param("username") String username,
+                                        @Param("offset") int offset,
+                                        @Param("pageSize") int pageSize);
+
+
     @Select("SELECT COUNT(*) FROM sys_user")
     int getTotalUsers();
+
+    @Select("SELECT COUNT(*) FROM sys_user WHERE username LIKE CONCAT('%',#{username},'%')")
+    int countByUsername(String username);
 
     @Select("SELECT status FROM sys_user WHERE username = #{username}")
     Integer getUserStatus(String username);
